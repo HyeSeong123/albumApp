@@ -1,34 +1,52 @@
+@font-face {
+    font-family: 'Ownglyph_ParkDaHyun';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2411-3@1.0/Ownglyph_ParkDaHyun.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
 body {
-  margin: 0;
-  padding: 0;
   font-family: 'Arial', sans-serif;
-  background-image: url("/static/images/main_background.png");
+  background-image: url("../images/main_background.png");
   background-size: cover;
-  min-height: calc( 100vh - 30px);
+  height: calc( 100vh - 30px);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   width: 100%;
-  margin-top:30px;
   position : relative;
 }
 
 .album_container {
-  width: 70%;
+  width: 1200px;
+  height: 800px;
   display: flex;
   justify-content: center;
+  position : relative;
+  flex-direction : column;
+  font-family : Ownglyph_ParkDaHyun;
+}
+
+.album_container > div {
+  width : 100%;
+  height : 85%;
+  display: flex;
+  justify-content: center;
+  align-items : center;
+  position : relative;
 }
 
 .photo_frame {
   background: #fff;
   padding: 1rem;
   box-shadow: 0 0.25rem 1rem rgba(0,0,0,0.2);
-  height : 400px;
+  height : 70%;
   width: 40%;
   border-radius: 8px;
   transform : rotate(358.5deg);
   z-index: 10;
   margin-left : 220px;
+  border : 6px solid #A08C64;
 }
 
 .album_container .photo_frame:before {
@@ -38,10 +56,20 @@ body {
   transition: all 0.35s;
 }
 .album_container .frame_img{
+  box-sizing : border-box;
   height: 95%;
+  border : 6px solid #A08C64;
+  border-radius : 3%;
 }
+
+.album_container .frame_img img{
+  border-radius : 1.7%;
+  object-fit : cover;
+  object-position : center center;
+}
+
 .caption {
-  font-size: 1.125rem;
+  font-size: 1.3rem;
   text-align: left;
   line-height: 2em;
 }
@@ -50,7 +78,6 @@ body {
 }
 .right_btn {
   width : 25%;
-  margin-top : 40px;
   margin-left : 30px;
   display: flex;
   align-items: flex-start;
@@ -66,6 +93,13 @@ body {
   border : 1px solid black;
   border-radius: 10px;
   width: 50%;
+  font-size : 21px;
+  font-weight : bold;
+  cursor : pointer;
+}
+
+.btn_wrap .normal_btn:hover {
+	background-color : #b98b3f;	
 }
 
 .btn_wrap .normal_btn img{
@@ -75,42 +109,76 @@ body {
   margin-bottom : -7px;
 }
 
-.free_image > div{
-  position:absolute;
+.album_container > div.bottom_btn{
+	display : flex;
+	height : 60px;
+	width : 40%;
+	justify-content : center;
+	margin-left : 320px;
+	margin-top : -50px;
 }
 
-.free_image > div.teddy_bear{
-  bottom : 3%;
-  width: 20%;
-  right : 19%;
+.album_container > div.bottom_btn .btn_wrap{
+	display : flex;
+	justify-content : center;
+	align-items : center;
+	width : 100%;
+	height : 100%;
 }
 
-.free_image > div.tape{
-  top : -61px;
-  width: 120px;
-  left : 44%;
-  transform: rotate(356deg);
-  opacity: 0.85;
-  z-index: 12;
+.album_container > div.bottom_btn .btn_wrap .normal_btn{
+	width : 100px;
+	margin : 0 10px;
+	position : relative;
+	padding : 10px 20px;
 }
 
-.free_image > div.main_img1{
-  top : -42px;
-  left :  27%;
-  width: 160px;
-  transform : rotate(8deg);
+.album_container > div.bottom_btn .btn_wrap .normal_btn img{
+	position : absolute;
+	top : 0;
+	left : 0;
+	width : 30px;
+	height : auto;
+	transform : translate(-2px, -12px) rotate(18deg);
 }
 
-.free_image > div.main_img2{
-  top : 40%;
-  left :  26%;
-  width: 140px;
-  transform : rotate(350deg);
+.album_container .free_image{
+	position : absolute;
+	width : 120px;
+}
+.album_container .photo_frame .free_image.tape{
+	top : 0;
+	left : 40%;
+	width : 90px;
+	transform : translateY(-25px) rotate(357deg);
+	opacity : 0.8;
 }
 
-.free_image > div.main_sunny{
-  bottom : 1%;
-  left :  22%;
-  width: 140px;
-  transform : rotate(3deg);
+.album_container .free_image.teddy_bear{
+	bottom : 5%;
+	right : 18%;
+	width : 150px;
+	transform : translateY(65px);
+}
+
+.album_container .free_image.main_img1{
+	left: 17%;
+	top: 13%;
+	height : auto;
+	transform : rotate(7deg);
+}
+
+.album_container .free_image.main_img2{
+	left: 17%;
+	bottom: 35%;
+	height : auto;
+	transform : rotate(354deg);
+}
+
+.album_container .free_image.main_sunny{
+	left: 10%;
+	bottom: 10%;
+	height : auto;
+	transform : rotate(2deg);
+	width : 170px;
 }

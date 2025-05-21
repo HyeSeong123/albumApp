@@ -1,0 +1,65 @@
+@font-face {
+    font-family: 'Ownglyph_ParkDaHyun';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2411-3@1.0/Ownglyph_ParkDaHyun.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+  background-image: url("../images/main_background.png");
+  background-size: cover;
+  height: 100vh;
+  width : 100%;
+  display : flex;
+  align-items : center;
+}
+
+.container{
+	width : 1200px;
+	height : 800px;
+	display : flex;
+	justify-content : flex-start;
+	align-items : center;
+	flex-direction : column;
+	margin : 0 auto;
+}
+
+.container > .sub_title{
+	color : #5d3b1e;
+	font-size : 28px;
+}
+
+.container > .sub_content {
+	color: #504336;
+	font-size : 17px;
+	font-weight : bold;
+}
+..path-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+#selected-path {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #c5a875;
+  background-color: #f9f1e3;
+  color: #5b4822;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.folder-btn {
+  background-color: #d9ad66;
+  color: #3c2c18;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.folder-btn:hover {
+  background-color: #e3bc79;
+}
