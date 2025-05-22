@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Album</title>
+
+        <link rel="stylesheet" href="/static/css/common.css" />
+        <link rel="stylesheet" href="/static/css/sub.css" />
+
+    </head>
+	
+	
+    <body>
+        <div class="container">
+			<section class="sub_title">
+				<h2>사진 등록</h2>
+			</section>
+			
+			<section class="sub_content">
+				<p>설정한 저장위치에 업로드한 이미지들이 연/월 단위로 자동 분류 됩니다.</p>
+			</section>
+			
+			<div>
+				<form name="fileUpload" class="fileUpload">
+					<section class="sub_main">
+						<div class="path-selector">
+							<form action="/save_path" method="POST">
+								<input type="text" id="selected-path" placeholder="저장 경로를 선택하세요" readonly />
+								<label for="folderPicker" class="folder-btn">📁 저장 위치 선택</label>
+								<input type="file" id="folderPicker" webkitdirectory directory multiple hidden />
+							</form>
+						</div>
+
+						<div id="drop-zone" class="drop-zone">
+							<p>📸 사진 파일을 여기에 드래그 앤 드롭하세요</p>
+							<p class="sub-text">또는 클릭하여 파일을 선택하세요</p>
+							<input type="file" id="fileInput" webkitdirectory directory multiple hidden />
+							<label for="fileInput" class="drop-overlay"></label>
+						</div>
+					</section>
+
+					<section class="fileUpload_btn">
+						<div class="btn_wrap">
+						<div class="normal_btn"><span>분류 및 <br/> 등록 시작!</span></div>
+						<div class="normal_btn"><a href="/">뒤로가기</a></div>
+					</section>
+				</div>
+			</div>
+				
+		</div>
+    </body>
+</html>

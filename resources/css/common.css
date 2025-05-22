@@ -11,3 +11,36 @@ h1,h2,h3,h4{
 	margin :0;
 	padding : 0;
 }
+
+a{
+	text-decoration: none;
+	color : inherit;
+}
+
+.normal_btn a {
+	display : block;
+	padding : 10px 20px;
+}
+
+.btn_wrap .normal_btn {
+  background-color: #d9ad66;
+  color: #3c2c18;
+  margin-bottom: 20px;
+  text-align: center;
+  padding-top : 3px;
+  padding-bottom : 3px;
+  border : 1px solid black;
+  border-radius: 10px;
+  width: 50%;
+  font-size : 21px;
+  font-weight : bold;
+  cursor : pointer;
+}
+
+.btn_wrap .normal_btn:hover {
+	background-color : #b98b3f;	
+}
+
+.btn_wrap .normal_btn {
+	width : 40%;
+}

@@ -15,7 +15,7 @@ def create_app() :
     app.static_folder = os.path.join(BASE_DIR, 'resources')
     app.static_url_path = '/static'
     
-    app.template_folder = os.path.join(BASE_DIR, 'html')
+    app.template_folder = os.path.join(BASE_DIR, 'templates')
     
     db.init_app(app)
     

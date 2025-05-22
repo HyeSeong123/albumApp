@@ -6,7 +6,7 @@
 }
 
 body {
-  background-image: url("../images/main_background.png");
+  background-image: url("/static/images/main_background.png");
   background-size: cover;
   height: 100vh;
   width : 100%;
@@ -34,7 +34,8 @@ body {
 	font-size : 17px;
 	font-weight : bold;
 }
-..path-selector {
+
+.path-selector {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -62,4 +63,44 @@ body {
 }
 .folder-btn:hover {
   background-color: #e3bc79;
+}
+
+.drop-zone {
+  position: relative;
+  border: 2px dashed #c9a36e;
+  border-radius: 16px;
+  background-color: #fdf6e9;
+  padding: 60px 30px;
+  text-align: center;
+  color: #5d3b1e;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+}
+
+.drop-zone:hover {
+  background-color: #f4e2c2;
+  cursor: pointer;
+}
+
+.sub-text {
+  font-size: 14px;
+  color: #8a6b47;
+  margin-top: 8px;
+}
+
+/* label을 덮어씌워서 클릭 영역 확장 */
+.drop-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  cursor: pointer;
+}
+
+.fileUpload .fileUpload_btn{
+  margin-top : 15px;
+}
+
+.btn_wrap{
+  display : flex;
+  width: 100%;
+  justify-content: space-around;
 }
