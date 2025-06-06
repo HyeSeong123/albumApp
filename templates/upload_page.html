@@ -8,6 +8,49 @@
         <link rel="stylesheet" href="/static/css/common.css" />
         <link rel="stylesheet" href="/static/css/sub.css" />
 
+        <style>
+            #loading-overlay {
+                display: none; /* Initially hidden, controlled by JS */
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.7);
+                z-index: 10000; /* High z-index */
+                justify-content: center;
+                align-items: center;
+                flex-direction: column; /* To stack message and spinner */
+            }
+            #loading-overlay.active {
+                display: flex; /* Show when active */
+            }
+            .loading-box {
+                background-color: white;
+                padding: 30px 50px;
+                border-radius: 10px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                text-align: center;
+            }
+            #loading-message {
+                margin: 0 0 20px 0; /* Space between message and spinner */
+                font-size: 1.1em;
+                color: #333;
+            }
+            .spinner {
+                width: 50px;
+                height: 50px;
+                border: 5px solid #f3f3f3; /* Light grey */
+                border-top: 5px solid #555; /* Darker grey or theme color */
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto; /* Center spinner if message is short */
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
     </head>
 	
 	<script>
@@ -23,6 +66,18 @@
 			const albumName = document.getElementById('albumName');
 			const fileList = document.getElementById('file-list');
 			const fileInput = document.getElementById('file-input');
+
+			const loadingOverlay = document.getElementById('loading-overlay');
+			const loadingMessageElem = document.getElementById('loading-message');
+
+			function showLoading(message) {
+				if (loadingMessageElem) loadingMessageElem.textContent = message;
+				if (loadingOverlay) loadingOverlay.classList.add('active');
+			}
+
+			function hideLoading() {
+				if (loadingOverlay) loadingOverlay.classList.remove('active');
+			}
 
 			// 파일 선택 이벤트 핸들러
 			fileInput.addEventListener('change', function(e) {
@@ -136,15 +191,41 @@
 			let selectedImageFiles = [];
 
 			// 파일 처리 함수
-			async function processFiles(files) {
-				const fileList = document.getElementById('file-list');
-				fileList.innerHTML = '';
-				if (files.length === 0) return;
-				selectedImageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-				for (let i = 0; i < selectedImageFiles.length; i++) {
-					const file = selectedImageFiles[i];
+			async function processFiles(inputFiles) { // Renamed to avoid confusion with internal 'files'
+				const fileListContainer = document.getElementById('file-list');
+				fileListContainer.innerHTML = ''; // Clear previous list
+				
+				const filesArray = Array.from(inputFiles); // Convert FileList to array for easier manipulation
+
+				if (filesArray.length === 0) return;
+
+				if (filesArray.length >= 5) {
+					showLoading("이미지를 올리는 중입니다");
+				}
+
+				// Populate the global selectedImageFiles for the upload process
+				selectedImageFiles = filesArray.filter(file => file.type.startsWith('image/'));
+				
+				let processedCount = 0;
+				const totalFilesToDisplay = filesArray.length;
+
+				if (totalFilesToDisplay === 0) { 
+					if (filesArray.length >= 5) hideLoading(); // Hide if shown and no files to display
+					return;
+				}
+                
+				function checkAndHideLoading() {
+					processedCount++;
+					if (processedCount === totalFilesToDisplay && filesArray.length >= 5) {
+						hideLoading();
+					}
+				}
+
+				for (let i = 0; i < totalFilesToDisplay; i++) {
+					const file = filesArray[i];
 					const fileItem = document.createElement('div');
 					fileItem.className = 'file-item';
+
 					if (file.type.startsWith('image/')) {
 						const reader = new FileReader();
 						reader.onload = function(e) {
@@ -158,10 +239,22 @@
 									<div class="upload-status">대기 중...</div>
 								</div>
 							`;
-							fileList.appendChild(fileItem);
+							fileListContainer.appendChild(fileItem);
+							checkAndHideLoading();
+						};
+						reader.onerror = function() {
+                            fileItem.innerHTML = `
+                                <div class="file-info">
+                                    <div class="file-name">${file.name}</div>
+                                    <div class="file-size">${formatFileSize(file.size)}</div>
+                                    <div class="upload-status error">파일 읽기 오류</div>
+                                </div>
+                            `;
+                            fileListContainer.appendChild(fileItem);
+							checkAndHideLoading();
 						};
 						reader.readAsDataURL(file);
-					} else {
+					} else { // Handle non-image files for display
 						fileItem.innerHTML = `
 							<div class="file-info">
 								<div class="file-name">${file.name}</div>
@@ -169,9 +262,12 @@
 								<div class="upload-status error">지원하지 않는 파일 형식</div>
 							</div>
 						`;
-						fileList.appendChild(fileItem);
+						fileListContainer.appendChild(fileItem);
+						checkAndHideLoading(); // This is a synchronous path
 					}
 				}
+				// If filesArray.length >= 5 and totalFilesToDisplay is 0 (e.g. user selected 5 non-image files, and they were all filtered out before loop)
+                // this check is now handled by the initial check: `if (totalFilesToDisplay === 0)`
 			}
 			
 			// 파일 크기 포맷팅 함수
@@ -202,9 +298,9 @@
 				}
 				
 				// 업로드 시작
-				const originalText = this.textContent;
+				const originalButtonHTML = this.innerHTML; // Store original HTML of the button
 				this.disabled = true;
-				this.textContent = '업로드 중...';
+				showLoading("Generating thumbnails and inserting into DB...");
 				
 				// 앨범 옵션 확인
 				const createAlbum = document.getElementById('createAlbum').checked;
@@ -213,12 +309,13 @@
 				if (createAlbum && !albumName) {
 					alert('앨범 이름을 입력해주세요.');
 					this.disabled = false;
-					this.textContent = originalText;
+					// this.innerHTML = originalButtonHTML; // Not strictly needed here as button text wasn't changed by loading screen
+					hideLoading();
 					return;
 				}
 				
 				try {
-					// 파일 업로드 함수 호출
+					// 파일 업로드 함수 호출 (uploadFiles 함수는 개별 파일 상태를 업데이트합니다)
 					await uploadFiles(selectedImageFiles);
 				} catch (error) {
 					console.error('Error:', error);
@@ -226,7 +323,8 @@
 				} finally {
 					// 버튼 상태 복원
 					this.disabled = false;
-					this.textContent = originalText;
+					this.innerHTML = originalButtonHTML; // Restore original button HTML
+					hideLoading();
 				}
 			});
 
@@ -304,6 +402,12 @@
 	</script>
 	
     <body>
+        <div id="loading-overlay">
+            <div class="loading-box">
+                <p id="loading-message"></p>
+                <div class="spinner"></div>
+            </div>
+        </div>
         <div class="container">
 			<section class="sub_title">
 				<h2>사진 등록</h2>

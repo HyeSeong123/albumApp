@@ -1,14 +1,11 @@
-from PIL import Image, ExifTags
+import logging
 import os
 import re
-import logging
-from datetime import datetime
-from typing import Dict, Optional, Union, BinaryIO
-from PIL import Image, ExifTags, ImageFile
-from PIL.ExifTags import TAGS, GPSTAGS
-import os
 import sqlite3
 from datetime import datetime
+from typing import Dict, Optional, Union, BinaryIO
+
+from PIL import Image, ExifTags, ImageFile
 
 # 부분적으로 로드된 이미지도 처리할 수 있도록 설정
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -231,7 +228,7 @@ def insert_photo_to_db(photo_info: dict) -> bool:
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
             'album.db'
         )
-        conn = sqlite3.connect(db_file_path)
+        conn = sqlite3.connect(db_file_path, timeout=10)
         cursor = conn.cursor()
         now_iso = datetime.now().isoformat()
 
@@ -268,3 +265,122 @@ def insert_photo_to_db(photo_info: dict) -> bool:
     finally:
         if conn:
             conn.close()
+
+def get_photo_filepaths_by_album_id(
+    album_id: Optional[str] = None, 
+    start_date: Optional[str] = None, 
+    end_date: Optional[str] = None, 
+    title: Optional[str] = None, 
+    keywords: Optional[str] = None
+) -> list[dict]:
+    """
+    지정된 조건에 따라 사진의 파일 경로와 촬영 날짜를 반환합니다.
+    키워드 정보는 이 함수에서 직접 반환하지 않습니다.
+
+    Args:
+        album_id: 조회할 앨범의 ID. None이면 전체 앨범.
+        start_date: 검색 시작 날짜 (YYYY-MM-DD).
+        end_date: 검색 종료 날짜 (YYYY-MM-DD).
+        title: 검색할 파일명 또는 제목의 일부.
+        keywords: 쉼표로 구분된 검색 키워드 문자열.
+
+    Returns:
+        사진 정보(filepath, date)를 담은 딕셔너리의 리스트.
+    """
+    conn = None
+    filepaths = []
+    try:
+        # 데이터베이스 파일 경로 설정 (insert_photo_to_db 함수와 동일한 방식으로 설정)
+        db_file_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+            'album.db'
+        )
+        conn = sqlite3.connect(db_file_path, timeout=10)
+        cursor = conn.cursor()
+        
+        params = []
+        where_clauses = []
+
+        # 키워드 검색 로직: 해당 키워드를 모두 가진 photo_id 목록 조회
+        if keywords:
+            keyword_list = [kw.strip() for kw in keywords.split(',') if kw.strip()]
+            if keyword_list:
+                # 각 키워드에 대해 photo_id를 찾는 쿼리를 구성하고 INTERSECT로 연결
+                # 또는 photo_id를 가져와서 Python에서 교집합을 구하거나, 아래와 같이 GROUP BY HAVING 사용
+                # 참고: 이 방식은 키워드가 많아질수록 IN 절의 파라미터 개수 제한에 걸릴 수 있음 (SQLite는 999개)
+                placeholders = ','.join(['?'] * len(keyword_list))
+                keyword_filter_query = f"""
+                    SELECT photo_id 
+                    FROM photo_keyword 
+                    WHERE keyword IN ({placeholders}) 
+                    GROUP BY photo_id 
+                    HAVING COUNT(DISTINCT keyword) = ?
+                """
+                keyword_params = keyword_list + [len(keyword_list)]
+                logger.info(f"Executing keyword filter query: {keyword_filter_query} with params: {keyword_params}")
+                cursor.execute(keyword_filter_query, keyword_params)
+                photo_ids_with_keywords = [row[0] for row in cursor.fetchall()]
+                
+                if not photo_ids_with_keywords: # 키워드 검색 결과 사진이 없으면 빈 리스트 반환
+                    logger.info("No photos found matching all specified keywords.")
+                    return [] 
+                
+                # photo_id 목록을 문자열로 변환하여 IN 절에 사용 (숫자 ID라고 가정)
+                # photo_id_placeholders = ','.join(['?'] * len(photo_ids_with_keywords))
+                # where_clauses.append(f"p.id IN ({photo_id_placeholders})")
+                # params.extend(photo_ids_with_keywords) # params에 photo_id들을 추가
+                # 위 방식 대신, 각 ID를 ? 로 처리하면 SQL 인젝션에 더 안전
+                where_clauses.append(f"p.id IN ({','.join('?' for _ in photo_ids_with_keywords)})")
+                params.extend(photo_ids_with_keywords)
+
+        query_base = """
+            SELECT p.filepath, p.taken_at
+            FROM photo p
+        """
+
+        if album_id:
+            where_clauses.append("p.album_id = ?")
+            params.append(album_id)
+        
+        if start_date:
+            where_clauses.append("substr(p.taken_at, 1, 10) >= ?")
+            params.append(start_date)
+        
+        if end_date:
+            where_clauses.append("substr(p.taken_at, 1, 10) <= ?")
+            params.append(end_date)
+            
+        if title:
+            where_clauses.append("p.filename LIKE ?") 
+            params.append(f"%{title}%")
+
+        query_where_section = ""
+        if where_clauses:
+            query_where_section = " WHERE " + " AND ".join(where_clauses)
+        
+        query_order = " ORDER BY p.taken_at DESC, p.id DESC"
+        
+        final_query = query_base + query_where_section + query_order
+        
+        logger.info(f"Executing photo search query: {final_query} with params: {params}")
+        cursor.execute(final_query, params)
+        rows = cursor.fetchall()
+        logger.info(f"SQL 쿼리 실행 결과 (rows) - 개수: {len(rows)}, 내용 (최대 5개): {rows[:5]}") # 처음 5개만 로깅
+        
+        # 결과를 딕셔너리 리스트로 변환 (키워드 정보는 포함하지 않음)
+        photo_data = []
+        for row in rows:
+            if row[0] and row[1]: # filepath와 taken_at이 모두 있는 경우
+                photo_data.append({'filepath': row[0], 'date': row[1], 'keywords': ''}) # keywords는 빈 문자열로
+        
+        logger.info(f"앨범 ID '{album_id if album_id else '전체'}' 및 검색 조건으로 {len(photo_data)}개의 사진 정보를 찾았습니다.")
+        
+    except sqlite3.Error as e:
+        logger.error(f"앨범 ID '{album_id}'의 사진 경로 조회 중 데이터베이스 오류 발생: {e}")
+    except Exception as ex:
+        logger.error(f"앨범 ID '{album_id}'의 사진 경로 조회 중 예기치 않은 오류 발생: {ex}", exc_info=True)
+    finally:
+        if conn:
+            conn.close()
+            
+    return photo_data

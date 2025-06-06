@@ -1,6 +1,5 @@
 import sqlite3
 from pathlib import Path
-from typing import Optional
 
 class DatabaseInitializer:
     def __init__(self, db_path: str = 'album.db'):
