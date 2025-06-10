@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사진 목록</title>
+	
+    <link rel="stylesheet" href="../resources/css/photo_list.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+	<script>
+	  const imageItems = {{ image_items_json | tojson }};
+	</script>
+
+	<script src="../resources/js/page-flip/dist/js/page-flip.browser.js"></script>
+    <script src="../resources/js/photo_list_init.js"></script>
+	
+<body>
+    <div class="container">
+        <div class="photo-section">
+            <div class="flip-book-container">
+                <div class="album-meta-info">
+                    <div class="album-date-range" id="current-page-date-range">{{ photo_date_range }}</div>
+                </div>
+                <div class="flip-book" id="photoAlbum">
+                    <!-- 페이지는 JS에서 생성됨 -->
+                </div>
+            </div>
+        </div>
+        <div class="action-section">
+            <div class="action-panel">
+                <div style="text-align: left;">
+					<a href="/" class="home-icon-button" title="홈으로">
+						<i class="fas fa-home"></i>
+					</a>
+				</div>
+				<h1>{{ album_name if album_name else "전체 사진 보기" }}</h1>
+				
+				<form id="search-form" method="GET" action="{{ url_for('main.photo_list', album_id=search_params.album_id if search_params.album_id else '') }}">
+					<div class="search-row">
+						<label for="search-date-start">날짜</label>
+						<input type="date" id="search-date-start" name="date_start">
+						<span>~</span>
+						<input type="date" id="search-date-end" name="date_end">
+					</div>
+					<div class="search-row">
+						<label for="search-title">제목</label>
+						<input type="text" id="search-title" name="title">
+					</div>
+					<div class="search-row">
+						<label for="search-keywords">키워드</label>
+						<input type="text" id="search-keywords" name="keywords">
+					</div>
+					<div class="search-actions">
+						<button type="submit" class="btn btn-primary">검색</button>
+						<button type="button" id="reset-search-btn" class="btn btn-secondary">초기화</button>
+					</div>
+				</form>
+            </div>
+        </div>
+    </div>
+
+    
+</body>
+</html>
