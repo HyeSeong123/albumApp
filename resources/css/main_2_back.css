@@ -1,0 +1,36 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #fffafc 0%, #fef3f8 100%);
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.wrap{
+	height: 100vh;
+	width : 1280px;
+	margin : 0 auto;
+}
+
+.wrap .main {
+	display : flex;
+	width: 100%;
+	height: 100%;
+	justify-content : flex-end;
+}
+
+.wrap .main .main_photo{
+	width : 65%;
+	height: 98%;
+	object-fit : cover;
+	object-position : center;
+	margin-right: 10px;
+	position : relative;
+}
+
+.wrap .main .main_photo .letter{
+	font-size : 19px;
+	font-weight : bold;
+	position : absolute;
+	top : 5%;
+	left : -75px;
+}
