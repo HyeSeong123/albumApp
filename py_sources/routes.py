@@ -260,11 +260,15 @@ def auto_organize_files(files, album_id=None):
 
 @main.route("/")
 def home():
-    return render_template("main.html", message="test")
+    return render_template("main.html")
+
+@main.route("/main_2")
+def main_2():
+    return render_template("main_2.html")
 
 @main.route("/upload_page")
 def upload_page():
-    return render_template("upload_page.html", message="test")
+    return render_template("upload_page.html")
 
 @main.route('/upload', methods=['POST'])
 def upload():
@@ -352,6 +356,10 @@ def image_auto_classify():
         current_app.logger.error(f'Error in image_auto_classify: {str(e)}')
         return jsonify({"success": False, "message": f"이미지 처리 중 오류가 발생했습니다: {str(e)}"})
 
+@main.route("/main2")
+def main2():
+    """포토북 스타일의 메인 페이지를 렌더링합니다."""
+    return render_template("main_2.html")
 
 @main.route("/photo_list")
 def photo_list():
@@ -432,6 +440,97 @@ def photo_list():
 
     current_app.logger.info(f"photo_list 템플릿으로 전달되는 image_items: {image_items}")
     return render_template("photo_list.html", 
+                           current_album_name=current_album_name, 
+                           image_items_json=json.dumps(image_items),
+                           photo_date_range=photo_date_range_str,
+                           search_params={
+                               'album_id': album_id if album_id else '',
+                               'start_date': start_date if start_date else '',
+                               'end_date': end_date if end_date else '',
+                               'title': title if title else '',
+                               'keywords': keywords if keywords else ''
+                           }
+                           )
+
+@main.route('/photo_list_2')
+def photo_list_2():
+    album_id = request.args.get('album_id', None)
+    start_date = request.args.get('start_date', None)
+    end_date = request.args.get('end_date', None)
+    title = request.args.get('title', None)
+    keywords = request.args.get('keywords', None)
+
+    current_album_name = album_id if album_id else "전체 사진"
+
+    # 검색 파라미터를 포함하여 DB에서 사진 정보 목록 조회
+    photo_data_list = get_photo_filepaths_by_album_id(
+        album_id=album_id,
+        start_date=start_date,
+        end_date=end_date,
+        title=title,
+        keywords=keywords
+    )
+
+    image_items = []
+    all_photo_dates = []
+    current_app.logger.info(f"get_photo_filepaths_by_album_id 결과 (photo_data_list): {photo_data_list}")
+
+    for photo_info in photo_data_list:
+        db_filepath = photo_info.get('filepath')
+        taken_at_str = photo_info.get('date')
+
+        if not db_filepath or not taken_at_str:
+            current_app.logger.warning(f"사진 정보에 filepath 또는 date가 누락되었습니다: {photo_info}")
+            continue
+
+        # 파일 경로를 URL로 변환 (Windows 경로 '\'를 '/'로 변경)
+        # 저장된 경로는 'album_name/YYYY/MM/DD/filename.jpg' 또는 'YYYY/MM/DD/filename.jpg' 형태를 가정
+        normalized_db_path = db_filepath.replace('\\', '/')
+        
+        # URL은 '/static/uploads/...' 형태를 따름 (사용자 메모리에 따라 향후 /uploads/... 직접 서비스 고려)
+        if not normalized_db_path.startswith('uploads/'):
+            # 'uploads/' 접두사가 없는 경우, 경로가 앨범명부터 시작하거나 날짜부터 시작하는 경우를 포괄하기 위함
+            # 예: 'MyAlbum/2023/01/01/img.jpg' -> 'uploads/MyAlbum/2023/01/01/img.jpg'
+            # 예: '2023/01/01/img.jpg' -> 'uploads/2023/01/01/img.jpg'
+            # 이미 'uploads/'로 시작하는 경우엔 이 부분을 건너뜀
+            test_path_parts = normalized_db_path.split('/')
+            if len(test_path_parts) > 1 and test_path_parts[0].lower() != 'uploads': # 이미 uploads로 시작하지 않는 경우
+                 # uploads/가 없는 경우, 그리고 첫번째 디렉토리명이 uploads가 아닌 경우
+                normalized_db_path = 'uploads/' + normalized_db_path.lstrip('/') 
+            elif len(test_path_parts) == 1 and test_path_parts[0].lower() != 'uploads': # 파일명만 있는 경우 (uploads/filename.jpg)
+                normalized_db_path = 'uploads/' + normalized_db_path.lstrip('/')
+        
+        # 최종적으로 'uploads/'로 시작하지 않으면 경고 후 강제 추가 (최후의 방어 로직)
+        if not normalized_db_path.startswith('uploads/'):
+            current_app.logger.warning(f"DB filepath '{db_filepath}'가 'uploads/'로 시작하지 않아 강제로 추가합니다: {normalized_db_path}")
+            normalized_db_path = 'uploads/' + normalized_db_path.lstrip('/')
+
+        image_url = '/static/' + normalized_db_path
+        
+        # 날짜 문자열 (예: YYYY-MM-DDTHH:MM:SS 또는 YYYY-MM-DD HH:MM:SS)에서 날짜 부분(YYYY-MM-DD)만 추출
+        if 'T' in taken_at_str:
+            display_date = taken_at_str.split('T')[0]
+        else:
+            display_date = taken_at_str.split(' ')[0]
+        
+        keywords = photo_info.get('keywords', '') # 키워드가 없을 경우 빈 문자열
+        image_items.append({'url': image_url, 'date': display_date, 'keywords': keywords})
+        all_photo_dates.append(display_date)
+
+    # 사진 기간 문자열 생성
+    photo_date_range_str = ""
+    if all_photo_dates:
+        min_date = min(all_photo_dates)
+        max_date = max(all_photo_dates)
+        if min_date == max_date:
+            photo_date_range_str = min_date
+        else:
+            photo_date_range_str = f"{min_date} ~ {max_date}"
+    else:
+        photo_date_range_str = "날짜 정보 없음"
+
+    current_app.logger.info(f"photo_list 템플릿으로 전달되는 image_items: {image_items}")
+    return render_template("photo_list_2.html", 
                            current_album_name=current_album_name, 
                            image_items_json=json.dumps(image_items),
                            photo_date_range=photo_date_range_str,
