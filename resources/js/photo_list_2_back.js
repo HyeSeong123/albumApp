@@ -1,63 +1,5 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사진 목록 - {{ current_album_name }}</title>
-    <link rel="stylesheet" type="text/css" href="/static/css/stPageFlip.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/photo_list.css">
-</head>
-
-<body>
-    <div class="navigation-area">
-        <button id="backButton" class="album-button">← 뒤로가기</button>
-        <div class="album-title">{{ album_name if album_name else "전체 사진 보기" }}</div>
-    </div>
-
-    <div class="search-container">
-        <form id="search-form" method="GET" action="{{ url_for('main.photo_list', album_id=search_params.album_id if search_params.album_id else '') }}">
-            <div class="search-row">
-                <div class="search-group">
-                    <label for="search-date-start">날짜:</label>
-                    <div class="date-fields-wrapper">
-                        <input type="date" id="search-date-start" name="date_start" placeholder="시작일">
-                        <span>~</span>
-                        <input type="date" id="search-date-end" name="date_end" placeholder="종료일">
-                    </div>
-                </div>
-                <div class="search-group">
-                    <label for="search-title">제목:</label>
-                    <input type="text" id="search-title" name="title" placeholder="제목 검색">
-                </div>
-            </div>
-            <div class="search-row">
-                <div class="search-group search-group-full-width">
-                    <label for="search-keywords">키워드:</label>
-                    <input type="text" id="search-keywords" name="keywords" placeholder="쉼표(,)로 구분된 키워드 검색 (예: 바다, 하늘)">
-                </div>
-            </div>
-            <div class="search-actions">
-                <button type="submit" class="btn btn-primary">검색</button>
-                <button type="button" id="reset-search-btn" class="btn btn-secondary">초기화</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="flip-book-container">
-        <div class="album-meta-info">
-            <div class="album-date-range" id="current-page-date-range">{{ photo_date_range }}</div>
-        </div>
-        <div class="flip-book" id="photoAlbum">
-            <!-- 페이지들은 JavaScript에 의해 동적으로 생성됩니다. -->
-        </div>
-        <!-- 페이지들은 JavaScript에 의해 동적으로 생성됩니다. -->
-    </div>
-</div>
-
-    <script src="/static/js/page-flip/dist/js/page-flip.browser.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-    const imageItemsRaw = '{{ image_items_json | safe }}';
+document.addEventListener('DOMContentLoaded', function () {
+    const imageItemsRaw = typeof image_items_json !== 'undefined' ? image_items_json : '[]'; // Ensure image_items_json is defined
     let imageItems = [];
     try {
         if (imageItemsRaw && imageItemsRaw !== 'None') { // 'None' 문자열도 체크
@@ -84,7 +26,9 @@
         const grouped = groupImages(currentImageItems, 6);
         const htmlElements = grouped.map(group => {
             const pageDiv = document.createElement('div');
-            pageDiv.className = 'multi-image-page';
+            // For PageFlip, pages are typically direct children, not wrapped further unless handled by library
+            // The class 'multi-image-page' can be used for styling the content within the page.
+            pageDiv.className = 'pf-page multi-image-page'; // Add pf-page for PageFlip library
             pageDiv.innerHTML = group.map(item => {
                 const keywords = item.keywords || ''; // undefined 방지
                 const date = item.date || ''; // undefined 방지
@@ -95,29 +39,27 @@
                     </div>
                 `;
             }).join('');
-            const nextHotspotDiv = document.createElement('div');
-            nextHotspotDiv.className = 'flip-hotspot flip-next-hotspot';
-            pageDiv.appendChild(nextHotspotDiv);
+            
+            // Hotspots should be added carefully, PageFlip might have its own way or conflict
+            // For simplicity, direct page click handling is often better with custom content.
+            // const nextHotspotDiv = document.createElement('div');
+            // nextHotspotDiv.className = 'flip-hotspot flip-next-hotspot';
+            // pageDiv.appendChild(nextHotspotDiv);
 
-            // const prevHotspotDiv = document.createElement('div'); // 왼쪽 하단 핫스팟 제거
-            // prevHotspotDiv.className = 'flip-hotspot flip-prev-hotspot';
-            // pageDiv.appendChild(prevHotspotDiv);
-
-            // 페이지 배경 클릭 시 페이지 넘김 방지 로직
             pageDiv.addEventListener('click', function(event) {
-                // 클릭된 대상이 페이지(pageDiv) 자신이고, 
-                // 이미지나 핫스팟과 같은 특정 자식 요소가 아닌 경우에만 이벤트 전파 중단
                 if (event.target === pageDiv) {
                     event.stopPropagation();
-                    // console.log('Direct click on multi-image-page background stopped.'); // 디버깅용
                 }
             });
 
             return pageDiv;
         });
+        // Ensure even number of pages if book is two-sided, PageFlip handles this typically by how it renders.
+        // If you add an empty page, it should also be a .pf-page
         if (htmlElements.length > 0 && htmlElements.length % 2 !== 0) {
             const emptyRightPage = document.createElement('div');
-            emptyRightPage.className = 'empty-notebook-page';
+            emptyRightPage.className = 'pf-page empty-notebook-page'; // Add pf-page
+            emptyRightPage.innerHTML = '<div></div>'; // Must have some content for PageFlip
             htmlElements.push(emptyRightPage);
         }
         return htmlElements;
@@ -153,24 +95,27 @@
     }
 
     function bindPageContentEventListeners() {
-        if (!pageFlipInstance || !photoAlbumElement) return;
-        const pageElements = photoAlbumElement.querySelectorAll('.stf__item'); 
+        if (!pageFlipInstance || !bookElement) return;
+        // PageFlip.js wraps pages in its own items, typically with class like 'stf__item'
+        // Or, if using loadFromHTML with .pf-page, query for those.
+        const pageElements = bookElement.querySelectorAll('.pf-page'); 
 
         pageElements.forEach(pageElement => {
             const imagesInPage = Array.from(pageElement.querySelectorAll('.album-image'));
             
             imagesInPage.forEach((imgElem) => {
+                // Re-cloning can sometimes help with event listeners, but ensure it's necessary.
                 const newImgElem = imgElem.cloneNode(true);
                 imgElem.parentNode.replaceChild(newImgElem, imgElem);
                 
                 newImgElem.addEventListener('click', function(event) {
-                    event.preventDefault(); // 이벤트의 기본 동작 중단
-                    event.stopImmediatePropagation(); // 현재 요소의 다른 리스너 및 이후 전파 중단
-                    const currentImageElementsOnPage = Array.from(this.closest('.stf__item').querySelectorAll('.album-image'));
+                    event.preventDefault(); 
+                    event.stopImmediatePropagation(); 
+                    const currentImageElementsOnPage = Array.from(this.closest('.pf-page').querySelectorAll('.album-image'));
                     const currentDataset = currentImageElementsOnPage.map(img => ({
                         url: img.src,
-                        date: img.dataset.date || '', // undefined 방지
-                        keywords: img.dataset.keywords || '' // undefined 방지
+                        date: img.dataset.date || '', 
+                        keywords: img.dataset.keywords || '' 
                     }));
                     const clickedIndexInPage = currentImageElementsOnPage.indexOf(this);
                     openModalWithImage(this, currentDataset, clickedIndexInPage);
@@ -188,7 +133,7 @@
 
                 newImgElem.addEventListener('mouseenter', function() {
                     this.style.transform = 'scale(1.08)';
-                    this.style.transition = 'transform 0.1s ease-out'; // transition 추가
+                    this.style.transition = 'transform 0.1s ease-out';
                     const keywords = this.dataset.keywords;
                     if (keywords && keywords.trim() !== '') {
                         keywordTooltip.textContent = keywords.split(',').filter(k => k.trim() !== '').join(', ');
@@ -203,39 +148,24 @@
                     if (keywordTooltip) keywordTooltip.style.display = 'none';
                 });
             });
-
-            // 페이지 넘김 핫스팟 이벤트 리스너 추가
-            const nextHotspotElem = pageElement.querySelector('.flip-next-hotspot');
-            if (nextHotspotElem) {
-                nextHotspotElem.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                    if (pageFlipInstance && pageFlipInstance.flipNext) {
-                        pageFlipInstance.flipNext();
-                    }
-                });
-            }
-
         });
     }
 
-    function updatePageDateRange(pageFlipInstance) {
-        if (!pageFlipInstance || typeof pageFlipInstance.getCurrentPageIndex !== 'function') return;
+    function updatePageDateRange(currentFlipInstance) {
+        if (!currentFlipInstance || typeof currentFlipInstance.getCurrentPageIndex !== 'function') return;
 
-        const currentPageIndex = pageFlipInstance.getCurrentPageIndex();
-        const pages = pageFlipInstance.getPageCollection().getPages();
+        const currentPageIndex = currentFlipInstance.getCurrentPageIndex();
+        const pages = currentFlipInstance.getPageCollection().getPages(); // Use PageFlip API
         const dateRangeElement = document.getElementById('current-page-date-range');
         if (!dateRangeElement) return;
 
         let datesOnCurrentSpread = [];
         
-        // 현재 보이는 페이지(왼쪽 또는 양면일 경우 오른쪽 포함)의 이미지 날짜 수집
-        const leftPageIndex = currentPageIndex; // 현재 페이지 인덱스 (0부터 시작)
-        const rightPageIndex = currentPageIndex + 1;
-
         const processPage = (pageIndex) => {
             if (pageIndex < pages.length) {
-                const pageElement = pages[pageIndex].getElement();
-                if (pageElement) {
+                const pageObject = pages[pageIndex]; // This is a PageObject from the library
+                if (pageObject && pageObject.getElement()) {
+                    const pageElement = pageObject.getElement();
                     const images = pageElement.querySelectorAll('.album-image');
                     images.forEach(img => {
                         const date = img.dataset.date;
@@ -245,19 +175,15 @@
             }
         };
 
-        processPage(leftPageIndex);
-        // 책처럼 양면으로 펼쳐지는 경우, 오른쪽 페이지도 고려
-        // PageFlip.js 설정에 따라 단일 페이지 뷰일 수도 있음 (size: 'stretch'가 아니거나, portrait 모드 등)
-        // 여기서는 간단히 현재 페이지와 다음 페이지만 고려 (양면 보기 가정)
-        if (pageFlipInstance.getSettings().width < photoAlbumElement.clientWidth && rightPageIndex < pages.length) { 
-             // (photoAlbumElement.clientWidth / 2) 와 pageFlipInstance.getSettings().width 비교로 양면인지 확인 가능
-            processPage(rightPageIndex);
+        processPage(currentPageIndex);
+        // Consider if the book is showing one or two pages at a time based on settings
+        if (currentFlipInstance.getSettings().width * 2 <= bookElement.clientWidth && (currentPageIndex + 1) < pages.length) { 
+            processPage(currentPageIndex + 1);
         }
 
         if (datesOnCurrentSpread.length > 0) {
-            // 날짜 문자열을 Date 객체로 변환하여 정렬
-            const dateObjects = datesOnCurrentSpread.map(d => new Date(d.split(' ')[0])); // 'YYYY-MM-DD HH:MM:SS' 형식에서 날짜 부분만 사용
-            dateObjects.sort((a, b) => a - b); // 시간순 정렬
+            const dateObjects = datesOnCurrentSpread.map(d => new Date(d.split(' ')[0])); 
+            dateObjects.sort((a, b) => a - b); 
             
             const minDate = dateObjects[0].toISOString().split('T')[0];
             const maxDate = dateObjects[dateObjects.length - 1].toISOString().split('T')[0];
@@ -273,54 +199,58 @@
     }
 
     function initializeAndLoadPageFlip(width, height, startPage = 0) {
-        if (!photoAlbumElement) return;
-        if (pageFlipInstance && pageFlipInstance.destroy) {
+        if (!bookElement) return;
+        if (pageFlipInstance && typeof pageFlipInstance.destroy === 'function') {
             pageFlipInstance.destroy();
+        }
+        
+        // Ensure St is defined (from page-flip.browser.js)
+        if (typeof St === 'undefined' || typeof St.PageFlip === 'undefined') {
+            console.error('St.PageFlip is not defined. Make sure page-flip.browser.js is loaded.');
+            // Retry or alert user
+            setTimeout(() => initializeAndLoadPageFlip(width, height, startPage), 200);
+            return;
         }
 
         initialFlipSettings = {
             width: width,
             height: height,
-            showCover: false,
-            size: "fixed",
+            showCover: false, // Assuming dynamic pages don't have a separate cover defined this way
+            size: "fixed", // As per reference, but 'stretch' might be desired for responsiveness
             flippingTime: 600,
-            clickBottomCornerToFlip: false, // 라이브러리 기본 모서리 클릭 비활성화
-            disableFlipByClick: true      // 라이브러리 페이지 영역 클릭으로 넘김 비활성화
+            // clickBottomCornerToFlip: false, // Reference had this
+            // disableFlipByClick: true      // Reference had this
+            // Consider PageFlip's own settings for click-to-flip, often configurable.
         };
 
-        pageFlipInstance = new St.PageFlip(photoAlbumElement, initialFlipSettings);
+        pageFlipInstance = new St.PageFlip(bookElement, initialFlipSettings);
 
         if (pageContentHTMLs && pageContentHTMLs.length > 0) {
             pageFlipInstance.loadFromHTML(pageContentHTMLs);
-            bindPageContentEventListeners(); // 페이지 로드 후 이벤트 바인딩
+            bindPageContentEventListeners(); 
 
-            // 초기 날짜 범위 설정
             updatePageDateRange(pageFlipInstance);
 
-            // 페이지 넘김 이벤트 핸들러
             pageFlipInstance.on('flip', (e) => {
-                // e.data는 넘겨진 페이지 인덱스 (새로운 현재 페이지의 왼쪽)
                 console.log('Flipped to page:', e.data);
                 updatePageDateRange(pageFlipInstance);
+                if(modal) modal.style.display = "none"; // Close modal on page flip
             }); 
 
             if (startPage > 0 && pageFlipInstance.turnToPage) {
-                pageFlipInstance.turnToPage(startPage, true); 
-            }
-            if (pageFlipInstance && pageFlipInstance.on) {
-                pageFlipInstance.on('flip', (data) => {
-                    if(modal) modal.style.display = "none";
-                });
+                // Ensure page index is valid
+                const validStartPage = Math.min(startPage, pageFlipInstance.getPageCount() -1 );
+                pageFlipInstance.turnToPage(validStartPage); 
             }
         } else {
-            photoAlbumElement.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:1.2em; color:#777;">표시할 사진이 없습니다.</div>';
+            bookElement.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:1.2em; color:#777;">표시할 사진이 없습니다.</div>';
         }
     }
 
     // --- 2. DOM Element Selections & Global Variables ---
-    const photoAlbumElement = document.getElementById('photoAlbum');
-    if (!photoAlbumElement) {
-        console.error('Photo album element not found!');
+    const bookElement = document.getElementById('photoBook'); // Changed from photoAlbumElement
+    if (!bookElement) {
+        console.error('Photo book element #photoBook not found!');
         return; 
     }
     console.log("Parsed imageItems (from top declaration):", imageItems);
@@ -359,7 +289,8 @@
                 currentImageIndexInModal--;
                 updateModalContents();
             } else if (pageFlipInstance && pageFlipInstance.flipPrev) {
-                pageFlipInstance.flipPrev(); // 모달 닫고 이전 페이지로
+                if(modal) modal.style.display = "none"; // Close modal before flipping
+                pageFlipInstance.flipPrev();
             }
         }
     }
@@ -371,7 +302,8 @@
                 currentImageIndexInModal++;
                 updateModalContents();
             } else if (pageFlipInstance && pageFlipInstance.flipNext) {
-                pageFlipInstance.flipNext(); // 모달 닫고 다음 페이지로
+                if(modal) modal.style.display = "none"; // Close modal before flipping
+                pageFlipInstance.flipNext(); 
             }
         }
     }
@@ -384,34 +316,33 @@
     }
 
     // --- 4. Initial Logic Execution ---
-    const dateRangeElement = document.getElementById('current-page-date-range');
-    // 초기 전체 날짜 범위는 Python에서 전달된 값을 그대로 사용하거나, 여기서 첫 페이지 기준으로 업데이트 할 수 있음.
-    // 현재는 Python에서 전달된 photo_date_range 값을 초기값으로 사용하고, 페이지 넘길 때마다 업데이트됨.
+    // const dateRangeElement = document.getElementById('current-page-date-range'); // Already declared in updatePageDateRange
+
     if (imageItems && imageItems.length > 0) {
         pageContentHTMLs = generatePageHTMLs(imageItems);
         
         const attemptInitialization = () => {
-            if (photoAlbumElement.clientWidth > 0 && photoAlbumElement.clientHeight > 0) {
-                const initialWidth = photoAlbumElement.clientWidth / 2;
-                const initialHeight = photoAlbumElement.clientHeight;
+            // Check if St.PageFlip is available before proceeding
+            if (typeof St === 'undefined' || typeof St.PageFlip === 'undefined') {
+                console.warn('St.PageFlip not defined yet. Retrying initialization...');
+                setTimeout(attemptInitialization, 100); // Retry after a short delay
+                return;
+            }
+            if (bookElement.clientWidth > 0 && bookElement.clientHeight > 0) {
+                const initialWidth = bookElement.clientWidth / 2; // Assuming two pages fit container width
+                const initialHeight = bookElement.clientHeight;
                 initializeAndLoadPageFlip(initialWidth, initialHeight);
             } else {
-                console.warn('Photo album element has no dimensions. Flipbook might not initialize correctly.');
-                if (!pageContentHTMLs || pageContentHTMLs.length === 0) { 
-                    photoAlbumElement.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:1.2em; color:#777;">표시할 사진이 없습니다.</div>';
-                }
+                console.warn('Book element has no dimensions. Flipbook might not initialize correctly. Retrying...');
+                // Retry if dimensions are not ready, common in some rendering scenarios
+                setTimeout(attemptInitialization, 100);
             }
         };
-
-        if (photoAlbumElement.clientWidth === 0 || photoAlbumElement.clientHeight === 0) {
-            console.log("photoAlbumElement dimensions not ready, will try after a short delay.");
-            setTimeout(attemptInitialization, 100); 
-        } else {
-            attemptInitialization();
-        }
+        
+        attemptInitialization();
 
     } else {
-         photoAlbumElement.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:1.2em; color:#777;">표시할 사진이 없습니다.</div>';
+         bookElement.innerHTML = '<div style="display:flex; justify-content:center; align-items:center; width:100%; height:100%; font-size:1.2em; color:#777;">표시할 사진이 없습니다.</div>';
          console.log("No image items to display or imageItems is not an array.");
     }
 
@@ -420,10 +351,10 @@
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            if (!photoAlbumElement || !pageFlipInstance || !pageFlipInstance.getCurrentPageIndex) return;
+            if (!bookElement || !pageFlipInstance || typeof pageFlipInstance.getCurrentPageIndex !== 'function') return;
 
-            const newContainerWidth = photoAlbumElement.clientWidth;
-            const newContainerHeight = photoAlbumElement.clientHeight;
+            const newContainerWidth = bookElement.clientWidth;
+            const newContainerHeight = bookElement.clientHeight;
 
             if (newContainerWidth > 0 && newContainerHeight > 0) {
                 const newPageWidth = newContainerWidth / 2;
@@ -434,23 +365,12 @@
                      currentPageIndex = pageFlipInstance.getCurrentPageIndex();
                 }
                 
+                // Pass the current page index to maintain position after resize
                 initializeAndLoadPageFlip(newPageWidth, newPageHeight, currentPageIndex); 
                 console.log('PageFlip re-initialized with new dimensions.');
             } else {
-                console.warn('Photo album element has no dimensions on resize. Skipping PageFlip update.');
+                console.warn('Book element has no dimensions on resize. Skipping PageFlip update.');
             }
         }, 250); 
     });
 });
-    </script>
-<!-- 사진 확대 모달 -->
-<div id="imageModal" class="modal">
-    <span class="close-modal-button">&times;</span>
-    <img class="modal-content" id="modalImage">
-    <div class="modal-nav prev-modal-nav">&#10094;</div>
-    <div class="modal-nav next-modal-nav">&#10095;</div>
-    <div id="modalCaption"></div>
-</div>
-
-</body>
-</html>

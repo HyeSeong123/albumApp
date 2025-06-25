@@ -1,462 +1,212 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My Album</title>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사진 등록</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Gowun Dodum', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .upload-card {
+      background: linear-gradient(135deg, #fefefe, #f8f9fa);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+      border-radius: 24px;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .dropzone-active {
+      border-color: #fb923c;
+      background-color: #fff7ed;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="w-full max-w-5xl upload-card p-10 relative">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">📁 사진 등록</h1>
+      <a href="/" class="text-base text-orange-600 font-semibold hover:text-orange-700">메인화면으로</a>
+    </div>
 
-        <link rel="stylesheet" href="/static/css/common.css" />
-        <link rel="stylesheet" href="/static/css/sub.css" />
+    <div class="mb-6">
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" id="createAlbum" class="accent-orange-500">
+        <span class="text-base text-gray-800 font-medium">새로운 앨범 생성</span>
+      </label>
+      <div id="albumNameInput" class="mt-3 hidden">
+        <input type="text" id="albumName" placeholder="앨범 이름 입력" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-orange-300">
+      </div>
+    </div>
 
-        <style>
-            #loading-overlay {
-                display: none; /* Initially hidden, controlled by JS */
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.7);
-                z-index: 10000; /* High z-index */
-                justify-content: center;
-                align-items: center;
-                flex-direction: column; /* To stack message and spinner */
-            }
-            #loading-overlay.active {
-                display: flex; /* Show when active */
-            }
-            .loading-box {
-                background-color: white;
-                padding: 30px 50px;
-                border-radius: 10px;
-                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-                text-align: center;
-            }
-            #loading-message {
-                margin: 0 0 20px 0; /* Space between message and spinner */
-                font-size: 1.1em;
-                color: #333;
-            }
-            .spinner {
-                width: 50px;
-                height: 50px;
-                border: 5px solid #f3f3f3; /* Light grey */
-                border-top: 5px solid #555; /* Darker grey or theme color */
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin: 0 auto; /* Center spinner if message is short */
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-    </head>
-	
-	<script>
-		document.addEventListener('DOMContentLoaded', function() {
-			const dropZone = document.getElementById('drop-zone');
-			const folderInput = document.getElementById('folderInput');
-			const imageInput = document.getElementById('imageInput');
-			const folderUpload = document.getElementById('folderUpload');
-			const imageUpload = document.getElementById('imageUpload');
-			const folderInputDiv = document.getElementById('folder-input');
-			const createAlbumCheckbox = document.getElementById('createAlbum');
-			const albumNameInput = document.getElementById('albumNameInput');
-			const albumName = document.getElementById('albumName');
-			const fileList = document.getElementById('file-list');
-			const fileInput = document.getElementById('file-input');
+    <div id="dropzone" class="border-2 border-dashed border-gray-400 rounded-xl p-10 text-center cursor-pointer transition mb-6 bg-white/60">
+      <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+      <p class="text-lg text-gray-700 font-semibold">
+        여기로 사진을 드래그하거나
+        <span class="text-orange-600 cursor-pointer" id="fileTrigger">파일 찾아보기</span>
+      </p>
+      <p class="text-sm text-gray-600 mt-2">앨범을 선택하지 않으면 전체 앨범에 등록됩니다</p>
+    </div>
 
-			const loadingOverlay = document.getElementById('loading-overlay');
-			const loadingMessageElem = document.getElementById('loading-message');
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold mb-3 text-gray-800">업로드된 파일 목록</h2>
+      <div id="upload-list" class="space-y-3"></div>
+    </div>
 
-			function showLoading(message) {
-				if (loadingMessageElem) loadingMessageElem.textContent = message;
-				if (loadingOverlay) loadingOverlay.classList.add('active');
-			}
+    <div class="flex justify-center">
+      <button id="uploadBtn" class="bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-6 py-3 rounded-xl shadow transition">분류 및 등록 시작!</button>
+    </div>
+  </div>
 
-			function hideLoading() {
-				if (loadingOverlay) loadingOverlay.classList.remove('active');
-			}
+  <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const fileTrigger = document.getElementById('fileTrigger');
+    const uploadList = document.getElementById('upload-list');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const createAlbumCheckbox = document.getElementById('createAlbum');
+    const albumNameInput = document.getElementById('albumNameInput');
+    const albumName = document.getElementById('albumName');
 
-			// 파일 선택 이벤트 핸들러
-			fileInput.addEventListener('change', function(e) {
-				const files = e.target.files;
-				processFiles(files);
-			});
+    let selectedFiles = [];
 
-			// 파일 업로드 함수
-			async function uploadFiles(files) {
-				// 앨범 생성 옵션 확인
-				const createAlbum = document.getElementById('createAlbum').checked;
-				const albumName = document.getElementById('albumName').value;
-				
-				// 파일 아이템 요소를 가져옵니다.
-				const fileItems = Array.from(document.querySelectorAll('.file-item'));
-				
-				// 모든 이미지 파일만 필터링
-				const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-				
-				// FormData 객체 생성
-				const formData = new FormData();
-				
-				// 이미지 파일들 추가
-				for (const file of imageFiles) {
-					formData.append('files[]', file);
-				}
-				
-				// 앨범 정보 추가
-				if (createAlbum && albumName) {
-					formData.append('createAlbum', 'true');
-					formData.append('albumName', albumName);
-				}
-				
-				// 모든 상태 요소를 업로드 중으로 변경
-				for (const item of fileItems) {
-					const statusElement = item.querySelector('.upload-status');
-					if (statusElement && statusElement.textContent === '대기 중...') {
-						statusElement.textContent = '업로드 중...';
-						statusElement.className = 'upload-status uploading';
-					}
-				}
+    fileTrigger.addEventListener('click', () => fileInput.click());
 
-				try {
-					// 모든 파일을 한 번에 업로드
-					const response = await fetch('/upload', {
-						method: 'POST',
-						body: formData
-					});
-					
-					const result = await response.json();
-					
-					if (result.success) {
-						// 성공적으로 업로드된 파일들의 상태 업데이트
-						const savedFiles = result.saved_files || [];
-						const failedFiles = result.failed_files || [];
-						
-						// 각 파일 상태 업데이트
-						for (let i = 0; i < fileItems.length; i++) {
-							const item = fileItems[i];
-							const statusElement = item.querySelector('.upload-status');
-							const nameElement = item.querySelector('.file-name');
-							
-							if (!statusElement || !nameElement) continue;
-							
-							const fileName = nameElement.textContent;
-							
-							// 이 파일이 성공적으로 업로드됐는지 확인
-							const wasSuccessful = savedFiles.some(file => file.filename === fileName);
-							const wasFailed = failedFiles.includes(fileName);
-							
-							if (wasSuccessful) {
-								statusElement.textContent = '업로드 완료';
-								statusElement.className = 'upload-status success';
-							} else if (wasFailed) {
-								statusElement.textContent = '업로드 실패';
-								statusElement.className = 'upload-status error';
-							}
-						}
-						
-						alert(`${savedFiles.length}개 파일 업로드 완료${failedFiles.length > 0 ? `, ${failedFiles.length}개 실패` : ''}`);
-					} else {
-						// 모든 파일의 상태를 실패로 업데이트
-						for (const item of fileItems) {
-							const statusElement = item.querySelector('.upload-status');
-							if (statusElement && statusElement.textContent === '업로드 중...') {
-								statusElement.textContent = '업로드 실패';
-								statusElement.className = 'upload-status error';
-							}
-						}
-						
-						alert('업로드 중 오류가 발생했습니다: ' + result.message);
-						console.error('업로드 실패:', result.message);
-					}
-				} catch (error) {
-					// 오류 발생 시 모든 대기 중인 파일의 상태 업데이트
-					for (const item of fileItems) {
-						const statusElement = item.querySelector('.upload-status');
-						if (statusElement && statusElement.textContent === '업로드 중...') {
-							statusElement.textContent = '오류 발생';
-							statusElement.className = 'upload-status error';
-						}
-					}
-					
-					alert('업로드 중 오류가 발생했습니다.');
-					console.error('업로드 중 오류 발생:', error);
-				}
-			}
-			
+    createAlbumCheckbox.addEventListener('change', () => {
+      albumNameInput.style.display = createAlbumCheckbox.checked ? 'block' : 'none';
+      if (!createAlbumCheckbox.checked) albumName.value = '';
+    });
 
-			// 전역 변수로 선택된 이미지 파일 저장
-			let selectedImageFiles = [];
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dropzone-active');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dropzone-active');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dropzone-active');
+      processItems(e.dataTransfer.items);
+    });
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+    });
 
-			// 파일 처리 함수
-			async function processFiles(inputFiles) { // Renamed to avoid confusion with internal 'files'
-				const fileListContainer = document.getElementById('file-list');
-				fileListContainer.innerHTML = ''; // Clear previous list
-				
-				const filesArray = Array.from(inputFiles); // Convert FileList to array for easier manipulation
+    function processItems(items) {
+      const filePromises = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i].webkitGetAsEntry();
+        if (item) filePromises.push(traverseFileTree(item));
+      }
+      Promise.all(filePromises).then(flattened => {
+        const allFiles = flattened.flat();
+        handleFiles(allFiles);
+      });
+    }
 
-				if (filesArray.length === 0) return;
+    function traverseFileTree(item) {
+      return new Promise((resolve) => {
+        if (item.isFile) {
+          item.file(file => {
+            if (file.type.startsWith('image/')) resolve([file]);
+            else resolve([]);
+          });
+        } else if (item.isDirectory) {
+          const dirReader = item.createReader();
+          dirReader.readEntries(entries => {
+            Promise.all(entries.map(traverseFileTree)).then(results => {
+              resolve(results.flat());
+            });
+          });
+        }
+      });
+    }
 
-				if (filesArray.length >= 5) {
-					showLoading("이미지를 올리는 중입니다");
-				}
+    function handleFiles(files) {
+      const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      newFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const item = document.createElement('div');
+          item.className = "flex items-center gap-4 p-4 bg-white border rounded-lg shadow-sm";
 
-				// Populate the global selectedImageFiles for the upload process
-				selectedImageFiles = filesArray.filter(file => file.type.startsWith('image/'));
-				
-				let processedCount = 0;
-				const totalFilesToDisplay = filesArray.length;
+          const index = selectedFiles.length;
+          selectedFiles.push(file);
 
-				if (totalFilesToDisplay === 0) { 
-					if (filesArray.length >= 5) hideLoading(); // Hide if shown and no files to display
-					return;
-				}
-                
-				function checkAndHideLoading() {
-					processedCount++;
-					if (processedCount === totalFilesToDisplay && filesArray.length >= 5) {
-						hideLoading();
-					}
-				}
-
-				for (let i = 0; i < totalFilesToDisplay; i++) {
-					const file = filesArray[i];
-					const fileItem = document.createElement('div');
-					fileItem.className = 'file-item';
-
-					if (file.type.startsWith('image/')) {
-						const reader = new FileReader();
-						reader.onload = function(e) {
-							fileItem.innerHTML = `
-								<div class="file-preview">
-									<img src="${e.target.result}" alt="${file.name}">
-								</div>
-								<div class="file-info">
-									<div class="file-name">${file.name}</div>
-									<div class="file-size">${formatFileSize(file.size)}</div>
-									<div class="upload-status">대기 중...</div>
-								</div>
-							`;
-							fileListContainer.appendChild(fileItem);
-							checkAndHideLoading();
-						};
-						reader.onerror = function() {
-                            fileItem.innerHTML = `
-                                <div class="file-info">
-                                    <div class="file-name">${file.name}</div>
-                                    <div class="file-size">${formatFileSize(file.size)}</div>
-                                    <div class="upload-status error">파일 읽기 오류</div>
-                                </div>
-                            `;
-                            fileListContainer.appendChild(fileItem);
-							checkAndHideLoading();
-						};
-						reader.readAsDataURL(file);
-					} else { // Handle non-image files for display
-						fileItem.innerHTML = `
-							<div class="file-info">
-								<div class="file-name">${file.name}</div>
-								<div class="file-size">${formatFileSize(file.size)}</div>
-								<div class="upload-status error">지원하지 않는 파일 형식</div>
-							</div>
-						`;
-						fileListContainer.appendChild(fileItem);
-						checkAndHideLoading(); // This is a synchronous path
-					}
-				}
-				// If filesArray.length >= 5 and totalFilesToDisplay is 0 (e.g. user selected 5 non-image files, and they were all filtered out before loop)
-                // this check is now handled by the initial check: `if (totalFilesToDisplay === 0)`
-			}
-			
-			// 파일 크기 포맷팅 함수
-			function formatFileSize(bytes) {
-				if (bytes === 0) return '0 Bytes';
-				const k = 1024;
-				const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-				const i = Math.floor(Math.log(bytes) / Math.log(k));
-				return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-			}
-			
-			// 업로드 버튼 클릭 이벤트 핸들러
-			const uploadBtn = document.querySelector('.fileUpload_btn .normal_btn:first-child');
-			uploadBtn.addEventListener('click', async function(e) {
-				e.preventDefault();
-				
-				// 파일이 선택되었는지 확인
-				const fileList = document.getElementById('file-list');
-				if (!fileList.children.length) {
-					alert('업로드할 파일을 선택해주세요.');
-					return;
-				}
-				
-				// 전역 변수에서 이미지 파일 가져오기
-				if (selectedImageFiles.length === 0) {
-					alert('업로드할 이미지 파일이 없습니다.');
-					return;
-				}
-				
-				// 업로드 시작
-				const originalButtonHTML = this.innerHTML; // Store original HTML of the button
-				this.disabled = true;
-				showLoading("Generating thumbnails and inserting into DB...");
-				
-				// 앨범 옵션 확인
-				const createAlbum = document.getElementById('createAlbum').checked;
-				const albumName = document.getElementById('albumName').value;
-				
-				if (createAlbum && !albumName) {
-					alert('앨범 이름을 입력해주세요.');
-					this.disabled = false;
-					// this.innerHTML = originalButtonHTML; // Not strictly needed here as button text wasn't changed by loading screen
-					hideLoading();
-					return;
-				}
-				
-				try {
-					// 파일 업로드 함수 호출 (uploadFiles 함수는 개별 파일 상태를 업데이트합니다)
-					await uploadFiles(selectedImageFiles);
-				} catch (error) {
-					console.error('Error:', error);
-					alert('업로드 중 오류가 발생했습니다.');
-				} finally {
-					// 버튼 상태 복원
-					this.disabled = false;
-					this.innerHTML = originalButtonHTML; // Restore original button HTML
-					hideLoading();
-				}
-			});
-
-			// 드래그 앤 드롭 이벤트 핸들러
-			dropZone.addEventListener('dragover', (e) => {
-				e.preventDefault();
-				dropZone.classList.add('dragover');
-			});
-
-			dropZone.addEventListener('dragleave', () => {
-				dropZone.classList.remove('dragover');
-			});
-
-			dropZone.addEventListener('drop', (e) => {
-				e.preventDefault();
-				dropZone.classList.remove('dragover');
-				const items = e.dataTransfer.items;
-				processDroppedItems(items);
-			});
-
-			// 드롭된 항목 처리
-			function processDroppedItems(items) {
-				const files = [];
-				for (let i = 0; i < items.length; i++) {
-					const item = items[i];
-					if (item.webkitGetAsEntry) {
-						const entry = item.webkitGetAsEntry();
-						if (entry.isDirectory) {
-							readDirectory(entry, files);
-						} else if (entry.isFile) {
-							entry.file((file) => {
-								if (file.type.startsWith('image/')) {
-									files.push(file);
-									processFiles(files);
-								}
-							});
-						}
-					} else if (item.getAsFile) {
-						const file = item.getAsFile();
-						if (file && file.type.startsWith('image/')) {
-							files.push(file);
-							processFiles(files);
-						}
-					}
-				}
-			}
-
-			// 디렉토리 읽기
-			function readDirectory(directory, files) {
-				const reader = directory.createReader();
-				reader.readEntries((entries) => {
-					entries.forEach((entry) => {
-						if (entry.isDirectory) {
-							readDirectory(entry, files);
-						} else if (entry.isFile) {
-							entry.file((file) => {
-								if (file.type.startsWith('image/')) {
-									files.push(file);
-									processFiles(files);
-								}
-							});
-						}
-					});
-				});
-			}
-
-			// 앨범 생성 체크박스 이벤트 핸들러
-			createAlbumCheckbox.addEventListener('change', function() {
-				albumNameInput.style.display = this.checked ? 'block' : 'none';
-				if (!this.checked) {
-					albumName.value = '';
-				}
-			});
-		});
-	</script>
-	
-    <body>
-        <div id="loading-overlay">
-            <div class="loading-box">
-                <p id="loading-message"></p>
-                <div class="spinner"></div>
+          item.innerHTML = `
+            <img src="${e.target.result}" alt="thumb" class="w-16 h-16 object-cover rounded-md">
+            <div class="flex-1">
+              <div class="text-sm font-medium text-gray-800 file-name">${file.name}</div>
+              <div class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</div>
+              <div class="upload-status text-sm text-gray-500">대기 중...</div>
             </div>
-        </div>
-        <div class="container">
-			<section class="sub_title">
-				<h2>사진 등록</h2>
-			</section>
-			
-			<section class="sub_content">
-				<p>설정한 저장위치에 업로드한 이미지들이 연/월 단위로 자동 분류 됩니다.</p>
-			</section>
-			
-			<div>
-                <form name="fileUpload" class="fileUpload" action="/upload" method="POST" enctype="multipart/form-data">
-                    <section class="sub_main">
-                        <div class="album-options">
-                            <label>
-                                <input type="checkbox" id="createAlbum" name="createAlbum">
-                                새로운 앨범 생성
-                            </label>
-                            <div id="albumNameInput" class="album-name-input" style="display: none;">
-                                <input type="text" id="albumName" name="albumName" placeholder="새 앨범 이름을 입력하세요">
-                            </div>
-                        </div>
-                        <div class="upload-options">
-                            <div class="file-input">
-						<label for="file-input" class="custom-file-upload" style="display:none">
-							파일 또는 폴더 선택
-						</label>
-						<input type="file" id="file-input" multiple directory webkitdirectory name="files[]" style="display:none"/>
-				</div>
-                                <div id="drop-zone" class="drop-zone">
-													<p>📸 파일 또는 폴더를 여기에 드래그 앤 드롭하세요</p>
-													<p class="sub-text">또는 위의 버튼을 클릭하세요</p>
-												</div>
-                        </div>
-                    </section>
-                    <section class="file-list-section">
-                        <h3>업로드된 파일 목록</h3>
-                        <div id="file-list" class="file-list">
-                            <!-- 파일 목록이 여기에 동적으로 추가됩니다 -->
-                        </div>
-                    </section>
+            <button class="text-red-500 text-sm hover:underline" onclick="removeFile(${index}, this)">제거</button>
+          `;
+          uploadList.appendChild(item);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
 
-					<section class="fileUpload_btn">
-						<div class="btn_wrap">
-						<div class="normal_btn"><span>분류 및 <br/> 등록 시작!</span></div>
-						<div class="normal_btn"><a href="/">뒤로가기</a></div>
-					</section>
-				</div>
-			</div>
-				
-		</div>
-    </body>
+    function removeFile(index, button) {
+      selectedFiles[index] = null;
+      button.closest('div').remove();
+    }
+
+    uploadBtn.addEventListener('click', async () => {
+      const filesToUpload = selectedFiles.filter(f => f);
+      if (!filesToUpload.length) {
+        alert('업로드할 파일을 선택해주세요.');
+        return;
+      }
+      if (createAlbumCheckbox.checked && !albumName.value.trim()) {
+        alert('앨범 이름을 입력해주세요.');
+        return;
+      }
+
+      const formData = new FormData();
+      filesToUpload.forEach(file => formData.append('files[]', file));
+      if (createAlbumCheckbox.checked) {
+        formData.append('createAlbum', 'true');
+        formData.append('albumName', albumName.value.trim());
+      }
+
+      const items = document.querySelectorAll('#upload-list > div');
+      items.forEach(item => {
+        const status = item.querySelector('.upload-status');
+        status.textContent = '업로드 중...';
+        status.classList.replace('text-gray-500', 'text-blue-600');
+      });
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+
+        const saved = result.saved_files || [];
+        const failed = result.failed_files || [];
+
+        items.forEach(item => {
+          const name = item.querySelector('.file-name')?.textContent || '';
+          const status = item.querySelector('.upload-status');
+
+          if (saved.some(f => f.original_filename === name)) {
+            status.textContent = '업로드 완료';
+            status.classList.replace('text-blue-600', 'text-green-600');
+          } else {
+            status.textContent = '업로드 실패';
+            status.classList.replace('text-blue-600', 'text-red-600');
+          }
+        });
+      } catch (err) {
+        alert('업로드 중 오류 발생');
+        console.error(err);
+      }
+    });
+  </script>
+</body>
 </html>

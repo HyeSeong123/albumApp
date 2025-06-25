@@ -1,66 +1,74 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사진 목록</title>
-	
-    <link rel="stylesheet" href="../resources/css/photo_list.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사진 보기</title>
+  <link rel="stylesheet" href="/static/css/stPageFlip.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/static/js/page-flip/dist/js/page-flip.browser.js"></script>
+  <script>
+    const image_items_json = {{ image_items_json | tojson | safe }};
+  </script>
+  <style>
+    #photoBook {
+      width: 90vw;
+      max-width: 1200px;
+      height: 75vh;
+    }
+    .pf-page {
+		display: grid !important;
+		grid-template-columns: repeat(3, 1fr);
+		grid-template-rows: repeat(2, 1fr);
+		gap: 0.5rem;
+		padding: 1rem;
+		width: 100%;
+		height: 100%;
+		box-sizing: border-box;
+	  }
+	  
+	  .pf-page .image-wrapper {
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	  }
+	  
+	  .pf-page .image-wrapper img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	  }
+	  
+  </style>
 </head>
+<body class="bg-neutral-100 text-gray-800 font-sans">
+  <div class="flex flex-col min-h-screen">
+    <header class="flex justify-between items-center px-8 py-4 bg-white border-b border-gray-200">
+      <button class="text-lg text-gray-600 hover:text-black" onclick="window.history.back()">← 돌아가기</button>
+      <h1 class="text-xl font-semibold">{{ current_album_name }}</h1>
+    </header>
 
-	<script>
-	  const imageItems = {{ image_items_json | tojson }};
-	</script>
+    <main class="flex-grow flex justify-center items-center px-8 py-6">
+      <div id="photoBook" class="bg-white shadow-lg">
+        <!-- PageFlip에 의해 페이지가 동적으로 삽입됩니다 -->
+      </div>
+    </main>
 
-	<script src="../resources/js/page-flip/dist/js/page-flip.browser.js"></script>
-    <script src="../resources/js/photo_list_init.js"></script>
-	
-<body>
-    <div class="container">
-        <div class="photo-section">
-            <div class="flip-book-container">
-                <div class="album-meta-info">
-                    <div class="album-date-range" id="current-page-date-range">{{ photo_date_range }}</div>
-                </div>
-                <div class="flip-book" id="photoAlbum">
-                    <!-- 페이지는 JS에서 생성됨 -->
-                </div>
-            </div>
-        </div>
-        <div class="action-section">
-            <div class="action-panel">
-                <div style="text-align: left;">
-					<a href="/" class="home-icon-button" title="홈으로">
-						<i class="fas fa-home"></i>
-					</a>
-				</div>
-				<h1>{{ album_name if album_name else "전체 사진 보기" }}</h1>
-				
-				<form id="search-form" method="GET" action="{{ url_for('main.photo_list', album_id=search_params.album_id if search_params.album_id else '') }}">
-					<div class="search-row">
-						<label for="search-date-start">날짜</label>
-						<input type="date" id="search-date-start" name="date_start">
-						<span>~</span>
-						<input type="date" id="search-date-end" name="date_end">
-					</div>
-					<div class="search-row">
-						<label for="search-title">제목</label>
-						<input type="text" id="search-title" name="title">
-					</div>
-					<div class="search-row">
-						<label for="search-keywords">키워드</label>
-						<input type="text" id="search-keywords" name="keywords">
-					</div>
-					<div class="search-actions">
-						<button type="submit" class="btn btn-primary">검색</button>
-						<button type="button" id="reset-search-btn" class="btn btn-secondary">초기화</button>
-					</div>
-				</form>
-            </div>
-        </div>
+    <!-- 모달: 사진 확대 보기 -->
+    <div id="photoModal" class="hidden fixed inset-0 z-50 bg-black/80 flex flex-col justify-center items-center">
+      <span class="absolute top-5 right-8 text-4xl text-white cursor-pointer close-modal-button">&times;</span>
+      <img id="modalImage" class="max-w-[90%] max-h-[80%] rounded-lg shadow-xl" />
+      <div class="absolute top-1/2 left-5 text-4xl text-white cursor-pointer -translate-y-1/2 prev-modal-nav">&#10094;</div>
+      <div class="absolute top-1/2 right-5 text-4xl text-white cursor-pointer -translate-y-1/2 next-modal-nav">&#10095;</div>
+      <div id="modalCaption" class="mt-4 text-white text-base text-center"></div>
     </div>
 
-    
+    <footer class="text-center py-2 text-sm text-gray-500">
+      <div id="current-page-date-range">날짜 정보 없음</div>
+    </footer>
+  </div>
+
+  <script src="/static/js/photo_list_2.js"></script>
 </body>
 </html>

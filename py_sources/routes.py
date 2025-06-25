@@ -356,11 +356,6 @@ def image_auto_classify():
         current_app.logger.error(f'Error in image_auto_classify: {str(e)}')
         return jsonify({"success": False, "message": f"이미지 처리 중 오류가 발생했습니다: {str(e)}"})
 
-@main.route("/main2")
-def main2():
-    """포토북 스타일의 메인 페이지를 렌더링합니다."""
-    return render_template("main_2.html")
-
 @main.route("/photo_list")
 def photo_list():
     album_id = request.args.get('album_id', None)

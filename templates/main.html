@@ -1,80 +1,90 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>My Album</title>
-
-        <link rel="stylesheet" href="/static/css/common.css" />
-        <link rel="stylesheet" href="/static/css/main.css" />
-
-    </head>
-
-    <body>
-        <div class="album_container">
-			<div>
-				<div class="photo_frame">
-					<div class="free_image tape"><img src="/static/images/main_tape.png" alt=""></div>
-					
-					<div class="frame_img">
-						<img src="/static/images/main_image.JPG" alt="">
-					</div>
-					
-					<div class="caption">
-						<span>#가족사진</span> &nbsp; <span>#추억</span>
-					</div>
-				</div>
-
-				<section class="right_btn">
-					<div class="btn_wrap">
-						<div class="normal_btn">
-							<a href="/photo_list">
-								<img src="/static/images/main_search.png" alt="">
-								<span>사진 보기</span>
-							</a>
-						</div>
-						<div class="normal_btn">
-							<a href="#">
-								<img src="/static/images/main_last.png" alt="">
-								<span>지난오늘 보기</span>
-							</a>
-						</div>
-						<div class="normal_btn">
-							<a href="#">
-								<img src="/static/images/main_hashtag.png" alt="">
-								<span>키워드 검색</span>
-							</a>
-						</div>
-					</div>
-				</section>
-				
-				<div class="free_image teddy_bear">
-					<img src="/static/images/main_bear.png" alt="">
-				</div>
-			</div>
-			
-			<div class="bottom_btn">
-				<div class="btn_wrap">
-					<div class="normal_btn">
-						<a href="/upload_page">
-							<img src="/static/images/red_pin.png" alt="">
-							<span>사진 등록</span>
-						</a>
-					</div>
-					
-					<div class="normal_btn">
-						<a href="#">
-							<img src="/static/images/blue_pin.png" alt="">
-							<span>인물 등록</span>
-						</a>
-					</div>
-				</div>
-			</div>
-			
-			<div class="free_image main_img1"><img src="/static/images/main_img1.png" alt=""></div>
-			<div class="free_image main_img2"><img src="/static/images/main_img2.png" alt=""></div>
-			<div class="free_image main_sunny"><img src="/static/images/main_sunny3.png" alt=""></div>
-			
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>우리의 순간들</title>
+    <link rel="stylesheet" href="/static/css/main_2.css" />
+    <link href="/static/css/common.css" rel="stylesheet" />
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet" />
+    
+  </head>
+  <body>
+    <div class="container">
+      <div class="main-area">
+        <div class="floating-menu" id="floatingMenu">
+          <a href="/upload_page">📁 사진 등록</a>
+          <a href="/person">🧑 인물 등록</a>
+          <a href="/photo_list">🖼️ 사진 보기</a>
+          <a href="/today">⏳ 작년의 오늘 보기</a>
+          <a href="/setting">⚙️ 설정</a>
         </div>
-    </body>
+        <div class="book-spine-label">
+          <div class="column-with-line">
+            <div class="line"></div>
+            <div class="column">
+              <span>희</span><span>연</span><span>이</span><span>네</span>
+            </div>
+          </div>
+          <div class="column-with-line">
+            <div class="line"></div>
+            <div class="column">
+              <span>가</span><span>족</span><span>앨</span><span>범</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="letter-box" data-aos="fade-right" data-aos-duration="1200">
+          <h1 class="main-title">우리의 이야기를 담다</h1>
+          <p class="sub-title">사진으로 기억하는 시간들</p>
+        </div>
+
+        <div class="photo-area" data-aos="fade-left" data-aos-duration="1200" data-aos-delay="200">
+          <img src="/static/images/main_image.jpg" alt="Main cover image" />
+        </div>
+
+        <div class="click-indicator">
+          <div class="scroll-hint" onclick="toggleMenu(event)">
+            <span class="arrow">▼</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+      AOS.init({ once: true, duration: 1000 });
+
+      let menuVisible = false;
+
+      function toggleMenu(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('floatingMenu');
+        menuVisible = !menuVisible;
+        menu.style.display = menuVisible ? 'flex' : 'none';
+
+        if (menuVisible) {
+          document.addEventListener('click', closeMenuOutside);
+        } else {
+          document.removeEventListener('click', closeMenuOutside);
+        }
+      }
+
+      function closeMenuOutside(e) {
+        const menu = document.getElementById('floatingMenu');
+        const hint = document.querySelector('.scroll-hint');
+
+        if (!menu.contains(e.target) && !hint.contains(e.target)) {
+          menu.style.display = 'none';
+          menuVisible = false;
+          document.removeEventListener('click', closeMenuOutside);
+        }
+      }
+    </script>
+  </body>
 </html>

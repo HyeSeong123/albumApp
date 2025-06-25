@@ -1,0 +1,494 @@
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* 뷰포트 전체 높이 사용 */
+    margin: 0; /* 기본 마진 제거 */
+    padding: 0; /* 기본 패딩 제거 */
+    background-color: #f5f0e1; /* 따뜻한 리넨 색상 */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box;
+    overflow: hidden; /* body 자체 스크롤 방지 */
+}
+
+.navigation-area {
+    width: 100%;
+    /* max-width: 1600px; body가 전체 너비를 가지므로, 내부 컨텐츠 정렬은 다른 방식으로 */
+    padding: 10px 20px; /* 내부 여백 */
+    display: flex;
+    justify-content: space-between; /* 요소들을 양쪽으로 분산 */
+    align-items: center; /* 수직 중앙 정렬 */
+    flex-shrink: 0; /* 높이가 줄어들지 않도록 */
+    background-color: #eaddc7; /* 약간 다른 배경색으로 구분 */
+    box-sizing: border-box;
+    border-bottom: 1px solid #d2b48c;
+}
+
+.album-button {
+    background-color: #4CAF50; /* 산뜻한 녹색 계열 */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.album-button:hover {
+    background-color: #45a049;
+}
+
+.album-meta-info {
+    width: 100%; /* 부모인 flip-book-container에 맞춰짐 */
+    text-align: center;
+    margin-bottom: 10px; /* flip-book과의 간격 */
+    /* max-width는 flip-book-container에 의해 제어되므로 제거 또는 주석 처리 */
+}
+
+.album-date-range {
+    font-size: 1.1em;
+    color: #5a4e40; /* 약간 어두운 갈색 계열 */
+    padding: 8px 15px;
+    background-color: rgba(255, 255, 255, 0.5); /* 약간 투명한 배경 */
+    border-radius: 5px;
+    display: inline-block; /* 내용만큼만 너비 차지 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.flip-book-container {
+    width: 95%; /* 양쪽에 약간의 여백 */
+    max-width: 1600px; /* 최대 너비 제한 */
+    flex-grow: 1; /* 남은 세로 공간을 모두 차지 */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    margin: 10px auto; /* 상하 약간의 여백 및 가로 중앙 정렬 */
+    position: relative;
+    overflow-y: hidden; /* 앨범 영역 스크롤바 제거 */
+    overflow-x: hidden;
+    padding: 10px;
+    box-sizing: border-box;
+    background-color: #654321;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    min-height: 0; /* flex 아이템 스크롤 문제 방지 */
+}
+
+.flip-book-container::before,
+.flip-book-container::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit; /* 부모의 border-radius 상속 */
+    box-sizing: border-box;
+}
+
+.flip-book-container::before {
+    background-color: #E8DDCB; /* 페이지 색상 1 (약간 어두운 종이 느낌) */
+    transform: translate(5px, 3px) rotate(0.8deg); /* 이동 및 회전 */
+    z-index: -1; /* flip-book-container 바로 뒤 */
+}
+
+.flip-book-container::after {
+    background-color: #FDF5E6; /* 페이지 색상 2 (stf__item과 유사한 밝은 종이 느낌) */
+    transform: translate(10px, 6px) rotate(-0.5deg); /* 더 많이 이동 및 반대 회전 */
+    z-index: -2; /* ::before 뒤 */
+}
+
+.flip-book {
+    width: 100%;
+    flex-grow: 1; /* 자식 요소가 남은 공간을 채우도록 함 */
+    min-height: 0; /* flex 아이템의 내용이 넘치는 것을 방지하고, 올바른 크기 계산을 도움 */
+    position: relative; /* For absolute positioning of pages if PageFlip.js uses it */
+    box-shadow: 0 0 20px rgba(0,0,0,0.2); /* Soft shadow for depth */
+    overflow: hidden; /* 내부 페이지 내용이 넘칠 경우 잘라냄 (스크롤바 방지) */
+}
+
+.multi-image-page {
+    display: grid !important; /* StPageFlip 라이브러리 스타일 오버라이드를 위해 !important 사용 */
+    grid-template-columns: repeat(3, 1fr); /* 3열 */
+    grid-template-rows: repeat(2, minmax(0, 1fr)); /* 2행, 행 높이를 콘텐츠에 맞게, 최소 0. 각 셀이 동일 높이 */
+    gap: 8px;
+    padding: 10px;
+    height: 100%; /* 페이지 높이를 채우도록 설정 */
+    box-sizing: border-box;
+    align-items: stretch; /* 아이템들이 셀 높이를 꽉 채우도록 */
+    justify-items: stretch; /* 아이템들이 셀 너비를 꽉 채우도록 */
+}
+.album-image {
+    width: 100%;
+    height: 100%;
+    max-height: 100%; /* 그리드 셀의 최대 높이를 초과하지 않도록 보장 */
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    display: block; /* 이미지 하단 여백 제거 */
+}
+
+/* 이미지와 날짜를 함께 담는 컨테이너 */
+.image-container-with-date {
+    position: relative; /* 날짜 오버레이의 기준점 */
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 내부 요소가 넘치지 않도록 */
+    border-radius: 4px; /* album-image와 동일하게 */
+}
+
+/* 이미지 하단에 표시될 날짜 오버레이 */
+.image-date-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* 반투명 검정 배경 */
+    color: white;
+    font-size: 0.85em;
+    padding: 5px 0; /* 위아래 패딩 */
+    text-align: center;
+    box-sizing: border-box;
+    opacity: 1; /* 기본적으로 보이도록 설정 */
+    transition: opacity 0.3s ease;
+}
+
+/* 이미지 컨테이너에 호버 시 날짜가 더 잘 보이도록 (선택적) */
+/* .image-container-with-date:hover .image-date-overlay {
+    opacity: 1;
+} */
+/* StPageFlip 라이브러리는 페이지 내부에 직접 이미지를 생성하므로, 
+   .page 와 .page img 스타일은 라이브러리 자체 스타일에 의해 제어될 수 있습니다.
+   필요하다면 라이브러리 CSS를 오버라이드하거나, 
+   loadFromHTML 사용 시 각 페이지 컨텐츠를 직접 스타일링합니다. */
+
+/* St.PageFlip 앨범 스타일 개선 */
+.stf__block {
+    background-color: #fff8dc; /* 따뜻한 옥수수색 (앨범 내부) */
+    border: 1px solid #d2b48c;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2); /* 좀 더 입체적인 그림자 */
+    border-radius: 8px; /* 둥근 모서리 */
+    overflow: hidden; /* 내부 컨텐츠가 넘칠 경우 스크롤바 숨김 */
+}
+
+/* St.PageFlip 개별 페이지 스타일 */
+.stf__item {
+    background-color: #fdf5e6; /* 따뜻한 올드레이스 색상 (사진 페이지 배경) */
+}
+
+/* 빈 오른쪽 페이지 (앨범 스타일) */
+.empty-notebook-page {
+    background-color: #fdf5e6; /* 사진 페이지와 동일한 올드레이스 색상 */
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px dashed #d2b48c; /* 연한 갈색 점선 테두리 */
+}
+
+/* .empty-notebook-page::before 의사 요소는 더 이상 필요 없으므로, 해당 스타일은 제거됩니다. */
+
+/* --- 모달 스타일 시작 --- */
+.modal {
+    display: none; /* 기본적으로 숨김 */
+    position: fixed; /* 화면에 고정 */
+    z-index: 1000; /* 최상단에 표시 */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* 내용이 많을 경우 스크롤 */
+    background-color: rgba(0,0,0,0.85); /* 반투명 검정 배경 */
+    padding-top: 50px; /* 모달 내용 상단 여백 */
+}
+
+.modal-content {
+    margin: auto;
+    display: block;
+    width: auto;
+    max-width: 85%;
+    max-height: 80vh; /* 화면 높이의 80%를 넘지 않도록 */
+    border-radius: 5px;
+}
+
+.close-modal-button {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.close-modal-button:hover,
+.close-modal-button:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modalCaption {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    text-align: center;
+    color: #ccc;
+    padding: 15px 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+.modal-nav {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 16px;
+    margin-top: -50px; /* 수직 중앙 정렬 */
+    color: white;
+    font-weight: bold;
+    font-size: 30px;
+    transition: 0.6s ease;
+    border-radius: 0 3px 3px 0;
+    user-select: none;
+    -webkit-user-select: none;
+    background-color: rgba(0,0,0,0.3);
+}
+
+.prev-modal-nav {
+    left: 0;
+    border-radius: 3px 0 0 3px;
+}
+
+.next-modal-nav {
+    right: 0;
+    border-radius: 0 3px 3px 0;
+}
+
+.modal-nav:hover {
+    background-color: rgba(0,0,0,0.6);
+}
+/* --- 모달 스타일 끝 --- */
+
+/* --- 이미지 호버 및 키워드 툴팁 스타일 시작 --- */
+.album-image {
+    /* JavaScript에서 transform으로 제어하므로, transition만 CSS에 추가 */
+    transition: transform 0.2s ease-out;
+}
+
+.keyword-tooltip {
+    position: absolute;
+    bottom: 5px; /* 이미지 하단 날짜 오버레이와 겹치지 않도록 조정 가능 */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    white-space: nowrap; /* 키워드가 길어도 한 줄로 표시 (필요시 수정) */
+    z-index: 10; /* 이미지 위에 표시 */
+    display: none; /* 기본적으로 숨김 */
+    pointer-events: none; /* 툴팁이 마우스 이벤트를 가로채지 않도록 */
+}
+
+/* image-container-with-date에 호버했을 때가 아닌, album-image 자체에 호버했을 때 툴팁 표시 (JS에서 제어) */
+.image-container-with-date {
+    position: relative; /* 키워드 툴팁의 기준점 */
+}
+/* --- 이미지 호버 및 키워드 툴팁 스타일 끝 --- */
+/* photo_list.css 파일에 추가 */
+
+.multi-image-page {
+    /* 기존 .multi-image-page 스타일에 position: relative; 가 없으면 추가해주세요. */
+    /* 예: 이미 display: grid; 등이 있다면 그대로 두고 position만 추가 */
+    position: relative;
+    /* --- 기존 스타일 유지 --- */
+    /* width: 100%; */
+    /* height: 100%; */
+    /* display: grid; */
+    /* grid-template-columns: repeat(3, 1fr); */
+    /* grid-template-rows: repeat(2, 1fr); */
+    /* gap: 10px; */
+    /* padding: 20px; */
+    /* box-sizing: border-box; */
+    /* background-color: #fff; */ /* 페이지 배경색 예시 */
+}
+
+.flip-hotspot {
+    position: absolute;
+    width: 60px;  /* 클릭 영역 너비, 필요에 따라 조정 */
+    height: 60px; /* 클릭 영역 높이, 필요에 따라 조정 */
+    /* background-color: rgba(0, 0, 255, 0.2); */ /* 개발 중 위치 확인을 위해 임시 배경색 사용 가능 */
+    z-index: 20; /* 다른 요소들보다 위에 오도록 설정 (이미지 클릭은 개별 처리되므로 괜찮음) */
+    cursor: pointer; /* 마우스 오버 시 커서 변경 */
+}
+
+.flip-next-hotspot {
+    bottom: 5px; /* 하단에서의 위치 */
+    right: 5px;  /* 오른쪽에서의 위치 */
+}
+
+.flip-prev-hotspot {
+    bottom: 5px; /* 하단에서의 위치 */
+    left: 5px;   /* 왼쪽에서의 위치 */
+}
+
+/* --- 검색 기능 스타일 시작 --- */
+.search-container {
+    width: 100%;
+    /* max-width: 1000px; /* body가 전체 너비를 가지므로, 내부 컨텐츠 정렬은 다른 방식으로 */
+    padding: 10px 20px; /* 내부 여백 */
+    background-color: #faf5eb; /* 기존 테마와 어울리는 밝은 베이지 */
+    /* border-radius: 8px; /* 상단에 붙으므로 radius 제거 또는 상단만 제거 */
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* 상단 그림자 제거 또는 조정 */
+    box-sizing: border-box;
+    flex-shrink: 0; /* 높이가 줄어들지 않도록 */
+    overflow-y: auto; /* 내용 많을 시 자체 스크롤 */
+    max-height: 25vh; /* 화면 높이의 약 25%, 검색창 최소화 */
+    border-bottom: 1px solid #e0d0b8;
+}
+
+#search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 각 검색 행(row) 또는 액션(actions) 사이의 간격 */
+}
+
+.search-row {
+    display: flex;
+    flex-wrap: wrap; /* 작은 화면에서 그룹이 다음 줄로 넘어가도록 */
+    gap: 20px; /* 한 행 내의 검색 그룹들 사이의 간격 */
+    align-items: flex-end; /* 그룹 하단 정렬 */
+}
+
+.search-group {
+    flex: 1 1 250px; /* 그룹이 유연하게 크기 조절, 기본 너비 250px */
+    display: flex;
+    flex-direction: column; /* 레이블과 입력 필드를 수직으로 배치 */
+}
+
+.search-group label {
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #5a4e40; /* 기존 .album-date-range 색상과 유사하게 */
+    font-size: 0.9em;
+}
+
+.search-group input[type="date"],
+.search-group input[type="text"] {
+    width: 100%; /* .date-fields-wrapper 내부 input은 아래에서 별도 처리 */
+    padding: 10px 12px;
+    border: 1px solid #d2b48c; /* 기존 테두리 색상과 유사하게 */
+    border-radius: 4px;
+    font-size: 1em;
+    box-sizing: border-box;
+    background-color: #fff;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.search-group input[type="date"]:focus,
+.search-group input[type="text"]:focus {
+    outline: none;
+    border-color: #a07d5a; /* 포커스 시 테두리 색상 변경 */
+    box-shadow: 0 0 0 2px rgba(160, 125, 90, 0.2);
+}
+
+.date-fields-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* input과 span 사이 간격 */
+}
+
+.date-fields-wrapper input[type="date"] {
+    flex-grow: 1; /* 가능한 공간을 채움 */
+    width: auto; /* flex-grow에 의해 자동 조절되도록, 부모의 width:100% 상속 방지 */
+}
+
+.date-fields-wrapper span { /* 날짜 사이의 '~' 문자 */
+    color: #5a4e40;
+    font-size: 1.2em;
+    flex-shrink: 0; /* 줄어들지 않도록 */
+    line-height: 42px; /* input 높이와 비슷하게 */
+}
+
+.search-group-full-width {
+    flex-basis: 100%; /* 키워드 검색 그룹이 한 행 전체를 차지하도록 */
+}
+
+.search-actions {
+    display: flex;
+    justify-content: flex-end; /* 버튼들을 오른쪽으로 정렬 */
+    gap: 12px; /* 버튼 사이의 간격 */
+    margin-top: 5px; /* 검색 필드와의 간격 추가 */
+}
+
+.search-actions .btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.search-actions .btn:active {
+    transform: translateY(1px);
+}
+
+.search-actions .btn-primary {
+    background-color: #4CAF50; /* 기존 .album-button 녹색 계열 */
+    color: white;
+}
+
+.search-actions .btn-primary:hover {
+    background-color: #45a049;
+}
+
+.search-actions .btn-secondary {
+    background-color: #abacae; /* 부드러운 회색 */
+    color: white;
+}
+
+.search-actions .btn-secondary:hover {
+    background-color: #939598;
+}
+
+/* 반응형 고려: 화면이 작아질 때 검색 그룹들을 수직으로 쌓음 */
+@media (max-width: 768px) {
+    .search-row {
+        flex-direction: column; /* 작은 화면에서는 그룹들을 수직으로 쌓음 */
+        align-items: stretch; /* 그룹들이 전체 너비를 차지하도록 */
+        gap: 15px;
+    }
+
+    .date-fields-wrapper { /* 작은 화면에서 날짜 필드 처리 */
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .date-fields-wrapper input[type="date"] {
+        width: 100%; /* 전체 너비 사용 */
+    }
+    
+    .date-fields-wrapper span {
+        display: none; /* 작은 화면에서는 ~ 숨김 */
+    }
+
+    .search-actions {
+        flex-direction: column;
+    }
+    .search-actions .btn {
+        width: 100%;
+    }
+}
+/* --- 검색 기능 스타일 끝 --- */
