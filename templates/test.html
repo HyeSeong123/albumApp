@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>테스트</title>
-  <link rel="stylesheet" href="../resources/css/stPageFlip.css" />
+  <title>우리의 순간들</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body {
@@ -11,36 +11,27 @@
       padding: 0;
       overflow: hidden;
       height: 100vh;
-      background-color: #f9f7f4;
-    }
-    #flipbook {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-    .page {
-      width: 100%;
-      height: 100%;
+      font-family: 'Gowun Dodum', sans-serif;
+      background-color: #fefcf8;
+      background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .page-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 10px;
-      width: 90%;
-      height: 90%;
-      padding: 1rem;
-      box-sizing: border-box;
+    .page {
+      width: 640px;
+      height: 960px;
     }
     .photo-wrapper {
       position: relative;
-      border-radius: 0.75rem;
+      border-radius: 1rem;
       overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border: 2px solid #fff;
+      transition: transform 0.3s ease;
+    }
+    .photo-wrapper:hover {
+      transform: scale(1.02);
     }
     .photo-wrapper img {
       width: 100%;
@@ -52,23 +43,26 @@
       position: absolute;
       bottom: 0;
       width: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 10px;
+      font-size: 0.75rem;
       color: white;
-      padding: 4px 8px;
-      font-size: 12px;
+      background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(2px);
+      border-bottom-left-radius: 1rem;
+      border-bottom-right-radius: 1rem;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     }
   </style>
 </head>
 <body>
-  <div id="flipbook" class="w-[1280px] h-[960px] rounded-xl border bg-[#fefcf9] shadow-lg overflow-hidden">
+  <div id="flipbook" class="w-[90vw] h-[90vh] max-w-[1280px] max-h-[960px] rounded-xl border bg-[#fefcf8] shadow-xl overflow-hidden relative">
     <div class="absolute inset-x-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#d3cfc7] to-[#e6e2da] opacity-50 pointer-events-none z-10"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/page-flip@0.4.3/dist/js/page-flip.browser.min.js"></script>
   <script>
-    const images = Array.from({ length: 24 }, (_, i) => ({
-      url: `https://picsum.photos/300/200?random=${i + 1}`,
+    const images = Array.from({ length: 16 }, (_, i) => ({
+      url: `https://picsum.photos/400/300?random=${i + 1}`,
       date: `2024-06-${String((15 + i % 2)).padStart(2, '0')}`,
       keywords: ['#여행', '#가족', '#생일', '#풍경'][i % 4]
     }));
@@ -85,7 +79,9 @@
       useMouseEvents: true,
       usePortrait: false,
       autoSize: false,
-      animationSpeed: 700
+      animationSpeed: 400,
+      useShadow: true,
+      mobileScrollSupport: false
     });
 
     const createImage = (src) => {
@@ -98,7 +94,7 @@
 
     const createPhotoBox = async ({ url, date, keywords }) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'photo-wrapper';
+      wrapper.className = 'photo-wrapper aspect-[4/3]';
       const img = await createImage(url);
       wrapper.appendChild(img);
 
@@ -111,9 +107,9 @@
 
     const createPage = async (imgList) => {
       const page = document.createElement('div');
-      page.className = 'page bg-[#fffaf5]';
+      page.className = 'page bg-[#fffaf5] flex items-center justify-center';
       const grid = document.createElement('div');
-      grid.className = 'page-grid';
+      grid.className = 'grid grid-cols-1 gap-4 w-full h-full max-h-full p-4 box-border';
       for (const img of imgList) {
         const box = await createPhotoBox(img);
         grid.appendChild(box);
@@ -128,13 +124,12 @@
       const cover = document.createElement('div');
       cover.className = 'page flex items-center justify-center bg-[#fdf8f1]';
       cover.setAttribute('data-density', 'hard');
-      cover.innerHTML = `<h1 class="text-4xl font-bold text-gray-700 font-[cursive]">2024</h1>`;
+      cover.innerHTML = `<div class="text-5xl font-bold text-[#4b3e36] tracking-wide drop-shadow-sm">우리의 순간들</div>`;
       pages.push(cover);
 
-      for (let i = 0; i < images.length; i += 12) {
-        const group = images.slice(i, i + 12);
-        const leftPage = await createPage(group.slice(0, 6));
-        const rightPage = await createPage(group.slice(6, 12));
+      for (let i = 0; i < images.length; i += 2) {
+        const leftPage = await createPage([images[i]]);
+        const rightPage = await createPage([images[i + 1]]);
         pages.push(leftPage, rightPage);
       }
 
@@ -145,7 +140,10 @@
       }
 
       pages.forEach(p => container.appendChild(p));
-      pageFlip.loadFromHTML(pages);
+
+      setTimeout(() => {
+        pageFlip.loadFromHTML(pages);
+      }, 0);
     })();
   </script>
 </body>
